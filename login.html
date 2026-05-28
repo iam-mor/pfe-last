@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login · Internship Platform</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style5.css">
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="login-container">
+        <div class="logo-area" onclick="goHome()" title="Go to Home">
+            <div class="logo-icon">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="logo-text">Internship Platform</div>
+        </div>
+
+        <div class="login-card">
+            <div class="role-tabs">
+                <button class="role-tab active" onclick="switchRole('intern')" id="internTab">Intern</button>
+                <button class="role-tab" onclick="switchRole('companyAdmin')" id="companyAdminTab">Company / Admin</button>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <div id="internForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="internEmail" placeholder="intern@univ-tebessa.dz" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="internPassword" placeholder="Must be at least 6 characters" autocomplete="current-password">
+                </div>
+                <button class="btn-login" onclick="handleInternLogin()">Login</button>
+            </div>
+
+            <div id="companyAdminForm" style="display: none;">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="companyAdminEmail" placeholder="company@example.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="companyAdminPassword" placeholder="Must be at least 6 characters" autocomplete="current-password">
+                </div>
+                <button class="btn-login" onclick="handleCompanyAdminLogin()">Login</button>
+            </div>
+
+            <div class="register-link">
+                New to Internship Platform? 
+                <a href="register.html">Register (Student / Company)</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRole = 'intern';
+
+        function goHome() {
+            window.location.href = 'homepage.html';
+        }
+        window.goHome = goHome;
+
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'error' ? 'fa-times-circle' : 'fa-check-circle'} text-lg" style="color: ${type === 'error' ? '#EF4444' : '#38A3FD'};"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#9CA3AF;cursor:pointer;margin-left:8px;"><i class="fas fa-times"></i></button>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => errorEl.classList.remove('show'), 4000);
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        function switchRole(role) {
+            currentRole = role;
+            hideError();
+            
+            document.getElementById('internTab').classList.toggle('active', role === 'intern');
+            document.getElementById('companyAdminTab').classList.toggle('active', role === 'companyAdmin');
+            document.getElementById('internForm').style.display = role === 'intern' ? 'block' : 'none';
+            document.getElementById('companyAdminForm').style.display = role === 'companyAdmin' ? 'block' : 'none';
+        }
+        window.switchRole = switchRole;
+
+        function handleInternLogin() {
+            const email = document.getElementById('internEmail').value.trim().toLowerCase();
+            const password = document.getElementById('internPassword').value;
+            
+            hideError();
+            
+            if (!email || !password) {
+                showError('Please enter both email and password.');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters.');
+                return;
+            }
+            
+            let students = JSON.parse(localStorage.getItem('registeredStudents')) || [];
+            let student = students.find(s => s.email === email && s.password === password);
+            
+            if (student) {
+                localStorage.setItem('currentUser', JSON.stringify({
+                    id: student.id,
+                    role: 'student',
+                    name: `${student.firstName} ${student.lastName}`,
+                    email: student.email,
+                    department: student.specialization || 'N/A',
+                    studentId: student.id
+                }));
+                showToast(`Welcome back, ${student.firstName}!`);
+                setTimeout(() => { window.location.href = 'intern.html'; }, 1000);
+            } else {
+                showError('Invalid email or password. Please try again.');
+                document.getElementById('internPassword').value = '';
+            }
+        }
+
+        function handleCompanyAdminLogin() {
+            const email = document.getElementById('companyAdminEmail').value.trim().toLowerCase();
+            const password = document.getElementById('companyAdminPassword').value;
+            
+            hideError();
+            
+            if (!email || !password) {
+                showError('Please enter both email and password.');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters.');
+                return;
+            }
+            
+            const admins = [
+                { id: 'ADM-001', name: 'Dr. Karim Mansouri', email: 'admin@internshipconnect.com', password: 'admin123' },
+                { id: 'SUPER-ADMIN', name: 'Lina Benali', email: 'super.admin@univ-tebessa.dz', password: 'pfe2024' }
+            ];
+            
+            let adminMatch = admins.find(a => a.email === email && a.password === password);
+            if (adminMatch) {
+                localStorage.setItem('currentUser', JSON.stringify({
+                    role: 'admin',
+                    adminId: adminMatch.id,
+                    name: adminMatch.name,
+                    email: adminMatch.email
+                }));
+                showToast(`Welcome, ${adminMatch.name}!`);
+                setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
+                return;
+            }
+            
+            let companies = JSON.parse(localStorage.getItem('registeredCompanies')) || [];
+            let company = companies.find(c => c.email === email && c.password === password);
+            
+            if (company) {
+                localStorage.setItem('currentUser', JSON.stringify({
+                    id: company.id,
+                    role: 'company',
+                    name: company.companyName,
+                    email: company.email
+                }));
+                showToast(`Welcome, ${company.companyName}!`);
+                setTimeout(() => { window.location.href = 'company.html'; }, 1000);
+                return;
+            }
+            
+            showError('Invalid email or password. Please try again.');
+            document.getElementById('companyAdminPassword').value = '';
+        }
+
+        window.handleInternLogin = handleInternLogin;
+        window.handleCompanyAdminLogin = handleCompanyAdminLogin;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (currentRole === 'intern') {
+                    handleInternLogin();
+                } else {
+                    handleCompanyAdminLogin();
+                }
+            }
+        });
+    </script>
+   <script>
+    currentRole = 'intern'; // [cite: 9]
+
+        function goHome() {
+            window.location.href = 'homepage.html'; // [cite: 10]
+        }
+
+        function switchRole(role) {
+            currentRole = role; // [cite: 18]
+            const errorBox = document.getElementById('errorMessage');
+            errorBox.style.display = 'none';
+            
+            document.getElementById('internTab').classList.toggle('active', role === 'intern'); // [cite: 19]
+            document.getElementById('companyAdminTab').classList.toggle('active', role === 'companyAdmin'); // [cite: 19]
+            document.getElementById('internForm').style.display = role === 'intern' ? 'block' : 'none'; // [cite: 19]
+            document.getElementById('companyAdminForm').style.display = role === 'companyAdmin' ? 'block' : 'none'; // [cite: 20]
+        }
+
+        // 1️⃣ دالة تسجيل دخول الطلاب (Intern) المرتبطة بالسيرفر بنجاح
+        async function handleInternLogin() {
+            const email = document.getElementById('internEmail').value.trim(); // [cite: 48]
+            const password = document.getElementById('internPassword').value; // [cite: 49]
+            const errorBox = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText'); // [cite: 49]
+
+            errorBox.style.display = 'none'; // [cite: 49]
+            if (!email || !password) { // [cite: 50]
+                errorText.innerText = "Please fill in all fields."; // [cite: 50]
+                errorBox.style.display = 'flex'; // [cite: 51]
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                }); // [cite: 51]
+                const result = await response.json(); // [cite: 52]
+
+                if (result.success && result.role === 'intern') { // [cite: 52]
+                    // خطوة الأمان الحاسمة: مسح أي بقايا لحساب قديم قبل حفظ الجديد
+                    localStorage.clear(); // [cite: 53]
+                    sessionStorage.clear();
+
+                    // تخزين الحساب الحقيقي الموثق من phpMyAdmin
+                    localStorage.setItem('user', JSON.stringify(result.user)); // [cite: 53]
+                    localStorage.setItem('role', result.role); // [cite: 53]
+                    
+                    // التوجيه الفوري لصفحة الطالب الحيوية
+                    window.location.href = 'intern.html'; // [cite: 53]
+                } else {
+                    errorText.innerText = result.message || "Invalid Email or Password."; // [cite: 54, 55]
+                    errorBox.style.display = 'flex'; // [cite: 55]
+                }
+            } catch (error) {
+                errorText.innerText = "Cannot connect to the server!"; // [cite: 55]
+                errorBox.style.display = 'flex'; // [cite: 56]
+            }
+        }
+
+        // 2️⃣ دالة تسجيل دخول الشركات أو المسؤولين (Company / Admin)
+        async function handleCompanyAdminLogin() {
+            const email = document.getElementById('companyAdminEmail').value.trim(); // [cite: 56]
+            const password = document.getElementById('companyAdminPassword').value; // [cite: 57]
+            const errorBox = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText'); // [cite: 57]
+
+            errorBox.style.display = 'none'; // [cite: 57]
+            if (!email || !password) { // [cite: 58]
+                errorText.innerText = "Please fill in all fields."; // [cite: 58]
+                errorBox.style.display = 'flex'; // [cite: 59]
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                }); // [cite: 59]
+                const result = await response.json(); // [cite: 60]
+
+                if (result.success) { // [cite: 60]
+                    // مسح الجلسات القديمة لمنع تداخل صلاحيات الشركات والطلاب
+                    localStorage.clear(); // [cite: 61]
+                    sessionStorage.clear();
+
+                    localStorage.setItem('user', JSON.stringify(result.user)); // [cite: 61]
+                    localStorage.setItem('role', result.role); // [cite: 61]
+
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    localStorage.setItem('userRole', result.role);
+                    
+                    if (result.role === 'company') { // [cite: 61]
+                        window.location.href = 'company.html'; // [cite: 61]
+                    } else if (result.role === 'department' || result.role === 'admin') { // [cite: 62]
+                        window.location.href = 'admin.html'; 
+                    }
+                } else {
+                    errorText.innerText = result.message || "Invalid Email or Password."; // [cite: 63, 64]
+                    errorBox.style.display = 'flex'; // [cite: 64]
+                }
+            } catch (error) {
+                errorText.innerText = "Cannot connect to the server!"; // [cite: 64]
+                errorBox.style.display = 'flex'; // [cite: 65]
+            }
+        }
+
+        // تفعيل زر الـ Enter لتسهيل الدخول
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { // [cite: 46]
+                if (currentRole === 'intern') { // [cite: 46]
+                    handleInternLogin(); // [cite: 46]
+                } else {
+                    handleCompanyAdminLogin(); // [cite: 46]
+                }
+            }
+        });
+    </script>
+</body>
+</html>

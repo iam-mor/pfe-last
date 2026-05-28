@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Internship Platform | Find Your Opportunity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style3.css">
+</head>
+<body class="overflow-x-hidden">
+
+    <header class="floating-header">
+        <div style="display: flex; align-items: center;">
+            <div class="logo-container" onclick="showSection('home')" title="Go to Home">
+                <div class="logo-icon-box">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <span class="logo-text">Internship Platform</span>
+            </div>
+            <div class="nav-links-desktop">
+                <a onclick="showSection('internships')" id="navInternships">Internships</a>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button onclick="handleLogin()" class="btn-login-header">Login</button>
+            <button onclick="handleRegister()" class="btn-register-header">Register</button>
+        </div>
+    </header>
+
+    <div id="appRoot" style="padding-top: 100px; position: relative; z-index: 10;"></div>
+
+    <script>
+        let currentSection = 'home';
+
+        const internshipsData = [
+            { id: 'i1', title: 'Frontend Developer Intern', company: 'Tech Solutions DZ', location: 'Remote', stipend: '15,000 DZD/mo', duration: '3 months', type: 'Remote', logo: 'fa-laptop-code', tags: ['React', 'Tailwind', 'JavaScript'], description: 'Build modern web applications with React and Tailwind CSS in a collaborative team.' },
+            { id: 'i2', title: 'Data Science Intern', company: 'AI Analytics Pro', location: 'Algiers', stipend: '20,000 DZD/mo', duration: '4 months', type: 'Hybrid', logo: 'fa-chart-line', tags: ['Python', 'ML', 'Pandas'], description: 'Work on real-world machine learning projects with experienced data scientists.' },
+            { id: 'i3', title: 'Digital Marketing Intern', company: 'Digital Innovators', location: 'Oran', stipend: '12,000 DZD/mo', duration: '2 months', type: 'On-site', logo: 'fa-bullhorn', tags: ['SEO', 'Content', 'Social Media'], description: 'Help grow online presence and manage digital marketing campaigns.' },
+            { id: 'i4', title: 'Backend Developer Intern', company: 'Cloud Systems DZ', location: 'Algiers', stipend: '18,000 DZD/mo', duration: '3 months', type: 'On-site', logo: 'fa-server', tags: ['Node.js', 'Express', 'MongoDB'], description: 'Develop scalable backend APIs and work with cloud infrastructure.' },
+            { id: 'i5', title: 'UI/UX Design Intern', company: 'Creative Studio', location: 'Remote', stipend: '14,000 DZD/mo', duration: '3 months', type: 'Remote', logo: 'fa-palette', tags: ['Figma', 'Adobe XD', 'Research'], description: 'Design intuitive user interfaces and conduct user research studies.' },
+            { id: 'i6', title: 'Mobile App Developer', company: 'AppWorks', location: 'Constantine', stipend: '16,000 DZD/mo', duration: '4 months', type: 'Hybrid', logo: 'fa-mobile-alt', tags: ['Flutter', 'Dart', 'Firebase'], description: 'Build cross-platform mobile applications for clients across industries.' }
+        ];
+
+        const trendingData = [
+            { icon: 'fa-star', badge: 'Most Applied', title: 'Frontend Developer Intern', company: 'Tech Solutions DZ', detail: 'Remote • 15,000 DZD/mo', desc: 'Over 45 applications in the last week. React, Tailwind, and modern JS stack.' },
+            { icon: 'fa-fire', badge: 'New Opportunity', title: 'Data Science Intern', company: 'AI Analytics Pro', detail: 'Hybrid • 20,000 DZD/mo', desc: 'Recently posted position with mentorship from senior data scientists. Python, ML focus.' },
+            { icon: 'fa-clock', badge: 'Closing Soon', title: 'Digital Marketing Intern', company: 'Digital Innovators', detail: 'Oran • 12,000 DZD/mo', desc: 'Deadline in 5 days. Great opportunity to work on real campaigns with a growing agency.' }
+        ];
+
+        function showSection(section) {
+            currentSection = section;
+            document.querySelectorAll('.nav-links-desktop a').forEach(a => a.classList.remove('active-link'));
+            if (section === 'internships') document.getElementById('navInternships')?.classList.add('active-link');
+            if (section === 'internships') { renderInternshipsPage(); } else { renderHomePage(); }
+        }
+        window.showSection = showSection;
+
+        function handleLogin() { window.location.href = 'login.html'; }
+        function handleRegister() { window.location.href = 'register.html'; }
+        function handleGetStarted() { window.location.href = 'register.html'; }
+        window.handleLogin = handleLogin;
+        window.handleRegister = handleRegister;
+        window.handleGetStarted = handleGetStarted;
+
+        function renderHomePage() {
+            document.getElementById('appRoot').innerHTML = `
+                <div class="hero-gradient">
+                    <div class="hero-bg-motion">
+                        <div class="shape shape-1"></div>
+                        <div class="shape shape-2"></div>
+                        <div class="shape shape-3"></div>
+                    </div>
+
+                    <div class="hero-content">
+                        <p class="hero-subtitle">Welcome to</p>
+                        <h1 class="hero-title">Internship Platform</h1>
+                        <p class="hero-desc">Launch your career with hands-on experience</p>
+                        <p class="hero-tagline">University–Industry Collaboration Ecosystem</p>
+                        <button onclick="handleGetStarted()" class="btn-primary">
+                            Get Started <i class="fas fa-arrow-right text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="max-w-7xl mx-auto px-4 -mt-6 relative z-20">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="stats-card p-5 text-center"><div class="text-2xl font-bold" style="color: #38A3FD;">200+</div><div class="text-xs text-muted">Active Internships</div></div>
+                        <div class="stats-card p-5 text-center"><div class="text-2xl font-bold" style="color: #38A3FD;">50+</div><div class="text-xs text-muted">Partner Companies</div></div>
+                        <div class="stats-card p-5 text-center"><div class="text-2xl font-bold" style="color: #38A3FD;">500+</div><div class="text-xs text-muted">Students Placed</div></div>
+                    </div>
+                </div>
+
+                <div class="max-w-7xl mx-auto px-4 py-12">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-2 text-primary">🔥 Trending Opportunities</h2>
+                    <div class="h-1 w-20 bg-gradient-to-r from-[#38A3FD] to-[#38E0FF] rounded-full mb-6"></div>
+                    <div class="grid md:grid-cols-3 gap-5 mb-10">
+                        ${trendingData.map(item => `
+                            <div class="internship-card rounded-2xl p-6 shadow-sm cursor-pointer">
+                                <div class="trending-badge text-xs px-3 py-1 rounded-full inline-flex items-center gap-1 mb-3">
+                                    <i class="fas ${item.icon}"></i> ${item.badge}
+                                </div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                                        <i class="fas fa-building text-[#38A3FD]"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-primary">${item.title}</h3>
+                                        <p class="text-sm font-medium" style="color: #1F7AD1;">${item.company}</p>
+                                    </div>
+                                </div>
+                                <p class="text-secondary text-sm mb-2"><i class="fas fa-info-circle mr-1" style="color: #38A3FD;"></i>${item.detail}</p>
+                                <p class="text-muted text-sm mt-3">${item.desc}</p>
+                                <button onclick="showSection('internships')" class="mt-4 font-semibold text-sm hover:underline" style="color: #38A3FD;">View details →</button>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <h2 class="text-2xl font-bold mb-6 text-primary">📋 Recent Internship Postings</h2>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        ${internshipsData.slice(0, 6).map(intern => `
+                            <div class="internship-card rounded-xl p-4 shadow-sm transform hover:-translate-y-1 duration-300">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"><i class="fas ${intern.logo} text-[#38A3FD]"></i></div>
+                                    <div><h3 class="font-bold text-primary text-sm">${intern.title}</h3><p class="text-xs text-muted">${intern.company}</p></div>
+                                </div>
+                                <div class="flex flex-wrap gap-1 mb-3">${intern.tags.map(t => `<span class="text-xs bg-blue-50 px-2 py-1 rounded-full" style="color: #1F7AD1;">${t}</span>`).join('')}</div>
+                                <div class="flex justify-between text-xs text-muted mb-3"><span><i class="fas fa-map-marker-alt" style="color: #38A3FD;"></i> ${intern.location}</span><span>${intern.stipend}</span></div>
+                                <button onclick="handleLogin()" class="w-full btn-primary text-white py-2 rounded-lg font-semibold text-sm">Apply Now</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderInternshipsPage() {
+            document.getElementById('appRoot').innerHTML = `
+                <div class="max-w-7xl mx-auto px-4 py-8">
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-primary mb-2">📋 Available Internships</h1>
+                        <p class="text-muted">${internshipsData.length} opportunities waiting for you</p>
+                    </div>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        ${internshipsData.map(intern => `
+                            <div class="internship-card rounded-xl p-5 shadow-sm transition-all duration-300 hover:border-[#38A3FD]" style="cursor: pointer;">
+                                <div class="flex items-center gap-4 mb-3">
+                                    <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                                        <i class="fas ${intern.logo} text-[#38A3FD] text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-primary">${intern.title}</h3>
+                                        <p class="text-sm" style="color: #1F7AD1;">${intern.company}</p>
+                                    </div>
+                                </div>
+                                <p class="text-secondary text-sm mb-3">${intern.description}</p>
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    ${intern.tags.map(t => `<span class="text-xs bg-blue-50 px-3 py-1 rounded-full" style="color: #1F7AD1;">${t}</span>`).join('')}
+                                </div>
+                                <div class="flex justify-between text-sm text-muted mb-3">
+                                    <span><i class="fas fa-map-marker-alt mr-1" style="color: #38A3FD;"></i>${intern.location}</span>
+                                    <span><i class="far fa-clock mr-1" style="color: #38A3FD;"></i>${intern.duration}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold" style="color: #1F7AD1;">${intern.stipend}</span>
+                                    <button onclick="handleLogin()" class="btn-primary text-white px-5 py-2 rounded-full text-sm font-semibold">Apply</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        renderHomePage();
+    </script>
+</body>
+</html>
