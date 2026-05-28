@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Dashboard · Internship Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="style2.css">
+</head>
+<body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<header class="header">
+    <div class="logo">
+        <div class="logo-icon"><i class="fas fa-briefcase"></i></div>
+        <span class="logo-text">Internship Platform</span>
+        <span class="logo-badge">Department</span>
+    </div>
+    <div class="header-right">
+        <div class="user-info">
+            <span class="user-name" id="adminName">Department Admin</span>
+            <div class="avatar">DA</div>
+            <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt mr-1"></i> Logout</button>
+        </div>
+    </div>
+</header>
+
+<aside class="sidebar">
+    <div class="menu-item active" data-view="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
+    <div class="menu-item" data-view="companies"><i class="fas fa-building"></i> Company Verifications</div>
+    <div class="menu-item" data-view="validations"><i class="fas fa-clipboard-check"></i> Internship Validations</div>
+    <div class="menu-item" data-view="students"><i class="fas fa-users"></i> Students Management</div>
+</aside>
+
+<main class="main-content" id="mainContent"></main>
+
+<!-- Company Details Modal -->
+<div id="companyModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-building mr-2" style="color:#ef4444;"></i>Company Details</h3>
+        <div id="companyDetails" class="company-info-detail"></div>
+        <div style="display:flex;gap:12px;">
+            <button id="verifyCompanyBtn" class="btn-approve" style="flex:1"><i class="fas fa-check mr-1"></i> Accept</button>
+            <button id="rejectCompanyBtn" class="btn-reject" style="flex:1"><i class="fas fa-times mr-1"></i> Reject</button>
+            <button onclick="closeModal('companyModal')" class="btn-outline">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Agreement Modal -->
+<div id="contractModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-file-contract mr-2" style="color:#ef4444;"></i>Internship Agreement</h3>
+        <div id="contractPreview" class="contract-preview"></div>
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button class="btn-approve" onclick="downloadContractPdf()" style="flex:1"><i class="fas fa-file-pdf mr-1"></i> Download PDF</button>
+            <button onclick="closeModal('contractModal')" class="btn-outline">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Sign & Complete Modal -->
+<div id="finalizeModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-clipboard-check mr-2" style="color:#ef4444;"></i>Sign & Complete Internship</h3>
+        <div id="finalizeDetails" class="evaluation-preview"></div>
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button class="btn-approve" onclick="finalizeInternship()" style="flex:1"><i class="fas fa-check-double mr-1"></i> Sign & Complete</button>
+            <button class="btn-outline" onclick="closeModal('finalizeModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== DATA (CONNECTED TO DB) ====================
+    let currentCompanyId = null;
+    let currentContract = null;
+    let currentFinalizeAppId = null;
+    let currentView = 'dashboard';
+
+    // مصفوفات حية سيتم شحنها من قاعدة البيانات فوراً
+    let defaultCompanies = [];
+    let defaultApplications = [];
+    let defaultStudents = [];
+
+    // دالة مرنة ومستقلة لجلب البيانات الحقيقية من السيرفر بدون تعقيد
+    async function fetchLiveFiles() {
+    try {
+        // 1. جلب الشركات من قاعدة البيانات مع تمرير بطاقة حماية القسم
+        const resComp = await fetch('http://localhost:5000/api/department/companies', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-role': 'department' // 🔒 إثبات صلاحية رئيس القسم لتخطي قفل الأمان
+            }
+        });
+        const dataComp = await resComp.json();
+        if(dataComp.success) {
+            defaultCompanies = dataComp.companies.map(c => ({
+                ...c,
+                // تأمين الحالات لتتوافق تماماً مع شروط جداول الـ Render لديك
+                status: c.status === '1' || c.status === 'verified' ? 'verified' : 
+                        (c.status === 'rejected' ? 'rejected' : 'pending_verification')
+            }));
+        }
+
+        // 2. جلب طلبات وعقود التربصات الحية مع تمرير بطاقة حماية القسم
+        const resApps = await fetch('http://localhost:5000/api/department/applications', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-role': 'department' // 🔒 إثبات صلاحية رئيس القسم لتخطي قفل الأمان
+            }
+        });
+        const dataApps = await resApps.json();
+        if(dataApps.success) {
+            defaultApplications = dataApps.applications;
+        }
+
+        // 3. جلب قائمة الطلاب من قاعدة البيانات مع تمرير بطاقة حماية القسم
+        const resStud = await fetch('http://localhost:5000/api/department/students', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-role': 'department' // 🔒 إثبات صلاحية رئيس القسم لتخطي قفل الأمان
+            }
+        });
+        const dataStud = await resStud.json();
+        if(dataStud.success) {
+            defaultStudents = dataStud.students;
+        }
+    } catch (err) {
+        console.error("📴 فشل الاتصال بالسيرفر، تأكد من تشغيل Node.js:", err);
+    }
+}
+
+    // تركنا هذه الدوال بنفس الأسماء لتقرأ من المصفوفات الحية دون تغيير بقية الكود
+    function loadCompanies() { return defaultCompanies; }
+    function saveCompanies(c) { defaultCompanies = c; }
+    function loadApplications() { return defaultApplications; }
+    function saveApplications(a) { defaultApplications = a; }
+    function loadStudents() { return defaultStudents; }
+
+    // ==================== RENDERING ====================
+    async function renderView(view) {
+        currentView = view;
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.toggle('active', i.dataset.view === view));
+        const container = document.getElementById('mainContent');
+
+        await fetchLiveFiles();
+
+        switch(view) {
+            case 'dashboard': renderDashboard(container); break;
+            case 'companies': renderCompaniesView(container); break;
+            case 'validations': renderValidationsView(container); break;
+            case 'students': renderStudentsView(container); break;
+            default: renderDashboard(container);
+        }
+
+        if (view !== 'dashboard') {
+            const vc = container.querySelector('.view-container');
+            if (vc && !vc.querySelector('.back-btn')) {
+                vc.insertAdjacentHTML('afterbegin',
+                    '<button class="back-btn" onclick="renderView(\'dashboard\')"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>'
+                );
+            }
+        }
+    }
+
+    // ==================== DASHBOARD ====================
+    function renderDashboard(container) {
+        const companies = loadCompanies();
+        const pendingCompanies = companies.filter(c => c.status === 'pending_verification');
+        const apps = loadApplications();
+        const evalReview = apps.filter(a => a.status === 'evaluation_submitted');
+        const pendingAgreements = apps.filter(a => a.status === 'accepted');
+
+        container.innerHTML = `
+        <div class="view-container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-building mr-1" style="color:#ef4444;"></i> Total Companies</div>
+                    <div class="stat-value">${companies.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-clock mr-1"></i> Pending Verifications</div>
+                    <div class="stat-value">${pendingCompanies.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-file-contract mr-1"></i> Pending Agreements</div>
+                    <div class="stat-value">${pendingAgreements.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-check-double mr-1"></i> Signature</div>
+                    <div class="stat-value">${evalReview.length}</div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-exclamation-triangle mr-2" style="color:#ef4444;"></i> Pending Company Verifications</h2>
+                <button class="btn-outline" onclick="renderView('companies')">View All</button>
+            </div>
+            <div class="table-container">${renderPendingCompaniesTable(pendingCompanies)}</div>
+
+            <div class="section-header" style="margin-top:40px;">
+                <h2 class="section-title"><i class="fas fa-history mr-2"></i> Recent Activity</h2>
+            </div>
+            <div class="table-container">${renderActivityTable()}</div>
+        </div>`;
+    }
+
+    function renderPendingCompaniesTable(pending) {
+        if (!pending.length) return '<div class="empty-state"><i class="fas fa-check-circle"></i><p>No pending company verifications</p></div>';
+        let html = '<table><thead><tr><th>Company</th><th>Email</th><th>Sector</th><th>Address</th><th>Registered</th><th>Action</th></tr></thead><tbody>';
+        pending.forEach(c => {
+            html += `<tr>
+                <td><strong>${c.companyName}</strong></td>
+                <td>${c.email}</td>
+                <td>${c.sector || 'N/A'}</td>
+                <td>${c.address || 'N/A'}</td>
+                <td>${new Date(c.registeredDate).toLocaleDateString()}</td>
+                <td><button class="btn-outline" onclick="viewCompanyDetails('${c.id}')"><i class="fas fa-eye mr-1"></i> Review</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderActivityTable() {
+        const companies = loadCompanies();
+        const apps = loadApplications();
+        const activities = [];
+
+        companies.forEach(c => {
+            activities.push({
+                type: 'company',
+                name: c.companyName,
+                action: c.status === 'verified' ? 'verified' : c.status === 'rejected' ? 'rejected' : 'pending verification',
+                date: c.registeredDate,
+                status: c.status
+            });
+        });
+
+        apps.forEach(a => {
+            activities.push({
+                type: 'application',
+                name: a.studentName,
+                action: `${a.internshipTitle} (${a.status.replace(/_/g, ' ')})`,
+                date: a.date,
+                status: a.status
+            });
+        });
+
+        activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const recent = activities.slice(0, 10);
+
+        if (!recent.length) return '<div class="empty-state"><i class="fas fa-inbox"></i><p>No recent activity</p></div>';
+
+        let html = '<table><thead><tr><th>Date</th><th>Activity</th><th>Status</th></tr></thead><tbody>';
+        const statusMap = {
+            'pending_verification': 'status-pending',
+            'verified': 'status-verified',
+            'rejected': 'status-rejected',
+            'accepted': 'status-accepted',
+            'approved': 'status-approved',
+            'evaluation_submitted': 'status-evaluation_submitted',
+            'completed': 'status-completed'
+        };
+
+        recent.forEach(act => {
+            html += `<tr>
+                <td>${new Date(act.date).toLocaleDateString()}</td>
+                <td>${act.type === 'company' ? '🏢 ' + act.name + ' ' + act.action : '🎓 ' + act.name + ' - ' + act.action}</td>
+                <td><span class="status-badge ${statusMap[act.status] || 'status-pending'}">${act.status.replace(/_/g, ' ')}</span></td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        return html;
+    }
+
+    // ==================== COMPANY VERIFICATIONS ====================
+    function renderCompaniesView(container) {
+        const companies = loadCompanies();
+        const pending = companies.filter(c => c.status === 'pending_verification');
+        const verified = companies.filter(c => c.status === 'verified');
+        const rejected = companies.filter(c => c.status === 'rejected');
+
+        container.innerHTML = `
+        <div class="view-container">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-building mr-2"></i> Company Verifications</h2>
+            </div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('pendingCompanies', this)">Pending (${pending.length})</button>
+                <button class="tab" onclick="switchTab('verifiedCompanies', this)">Verified (${verified.length})</button>
+                <button class="tab" onclick="switchTab('rejectedCompanies', this)">Rejected (${rejected.length})</button>
+            </div>
+            <div id="pendingCompaniesTab" class="inner-tab-content active">
+                <div class="table-container">${renderFullPendingTable(pending)}</div>
+            </div>
+            <div id="verifiedCompaniesTab" class="inner-tab-content">
+                <div class="table-container">${renderVerifiedTable(verified)}</div>
+            </div>
+            <div id="rejectedCompaniesTab" class="inner-tab-content">
+                <div class="table-container">${renderRejectedTable(rejected)}</div>
+            </div>
+        </div>`;
+    }
+
+    function renderFullPendingTable(pending) {
+        if (!pending.length) return '<div class="empty-state"><i class="fas fa-check-circle"></i><p>No pending verifications</p></div>';
+        let html = '<table><thead><tr><th>Company</th><th>Email</th><th>Phone</th><th>Address</th><th>Sector</th><th>Registered</th><th>Action</th></tr></thead><tbody>';
+        pending.forEach(c => {
+            html += `<tr>
+                <td><strong>${c.companyName}</strong></td>
+                <td>${c.email}</td>
+                <td>${c.phone || 'N/A'}</td>
+                <td>${c.address || 'N/A'}</td>
+                <td>${c.sector || 'N/A'}</td>
+                <td>${new Date(c.registeredDate).toLocaleDateString()}</td>
+                <td><button class="btn-outline" onclick="viewCompanyDetails('${c.id}')"><i class="fas fa-eye mr-1"></i> Review</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderVerifiedTable(verified) {
+        if (!verified.length) return '<div class="empty-state"><i class="fas fa-building"></i><p>No verified companies</p></div>';
+        let html = '<table><thead><tr><th>Company</th><th>Email</th><th>Sector</th><th>Verified Date</th></tr></thead><tbody>';
+        verified.forEach(c => {
+            html += `<tr>
+                <td><strong>${c.companyName}</strong></td>
+                <td>${c.email}</td>
+                <td>${c.sector || 'N/A'}</td>
+                <td>${c.verifiedDate ? new Date(c.verifiedDate).toLocaleDateString() : 'N/A'}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderRejectedTable(rejected) {
+        if (!rejected.length) return '<div class="empty-state"><i class="fas fa-ban"></i><p>No rejected companies</p></div>';
+        let html = '<table><thead><tr><th>Company</th><th>Email</th><th>Sector</th><th>Registered</th></tr></thead><tbody>';
+        rejected.forEach(c => {
+            html += `<tr>
+                <td><strong>${c.companyName}</strong></td>
+                <td>${c.email}</td>
+                <td>${c.sector || 'N/A'}</td>
+                <td>${new Date(c.registeredDate).toLocaleDateString()}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    // ==================== INTERNSHIP VALIDATIONS ====================
+    function renderValidationsView(container) {
+        const apps = loadApplications();
+        const agreements = apps.filter(a => a.status === 'accepted');
+        const inProgress = apps.filter(a => a.status === 'approved' || a.status === 'in_progress');
+        const signature = apps.filter(a => a.status === 'evaluation_submitted');
+        const completed = apps.filter(a => a.status === 'completed');
+
+        container.innerHTML = `
+        <div class="view-container">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-clipboard-check mr-2"></i> Internship Validations</h2>
+                <label class="btn-outline file-upload-label">
+                    <i class="fas fa-upload"></i> Import from Excel
+                    <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" onchange="handleExcelImport(event)">
+                </label>
+            </div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchValidationTab('agreements', this)">Agreements (${agreements.length})</button>
+                <button class="tab" onclick="switchValidationTab('inprogress', this)">In Progress (${inProgress.length})</button>
+                <button class="tab" onclick="switchValidationTab('signature', this)">Signature (${signature.length})</button>
+                <button class="tab" onclick="switchValidationTab('completed', this)">Completed (${completed.length})</button>
+            </div>
+            <div id="agreementsValidTab" class="inner-tab-content active">
+                <div class="table-container">${renderAgreementsTab(agreements)}</div>
+            </div>
+            <div id="inprogressValidTab" class="inner-tab-content">
+                <div class="table-container">${renderInProgressTable(inProgress)}</div>
+            </div>
+            <div id="signatureValidTab" class="inner-tab-content">
+                <div class="table-container">${renderSignatureTable(signature)}</div>
+            </div>
+            <div id="completedValidTab" class="inner-tab-content">
+                <div class="table-container">${renderCompletedTable(completed)}</div>
+            </div>
+        </div>`;
+    }
+
+    function renderAgreementsTab(list) {
+        if (!list.length) return '<div class="empty-state"><i class="fas fa-file-contract"></i><p>No pending agreements</p></div>';
+        let html = '<table><thead><tr><th>Student</th><th>Company</th><th>Internship</th><th>Date</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+        list.forEach(a => {
+            html += `<tr>
+                <td><strong>${a.studentName}</strong></td>
+                <td>${a.company}</td>
+                <td>${a.internshipTitle}</td>
+                <td>${a.date}</td>
+                <td><span class="status-badge status-accepted">Pending Approval</span></td>
+                <td>
+                    <button class="btn-outline" onclick="showContract('${a.studentName}','${a.company}','${a.internshipTitle}')"><i class="fas fa-eye mr-1"></i> View</button>
+                    <button class="btn-approve" onclick="validateAgreement('${a.id}')"><i class="fas fa-check mr-1"></i> Approve</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderInProgressTable(list) {
+        if (!list.length) return '<div class="empty-state"><i class="fas fa-spinner"></i><p>No active internships</p></div>';
+        let html = '<table><thead><tr><th>Student</th><th>Company</th><th>Internship</th><th>Status</th></tr></thead><tbody>';
+        list.forEach(a => {
+            html += `<tr>
+                <td><strong>${a.studentName}</strong></td>
+                <td>${a.company}</td>
+                <td>${a.internshipTitle}</td>
+                <td><span class="status-badge status-active">Active</span></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderSignatureTable(list) {
+        if (!list.length) return '<div class="empty-state"><i class="fas fa-signature"></i><p>No evaluations awaiting signature</p></div>';
+        let html = '<table><thead><tr><th>Student</th><th>Company</th><th>Internship</th><th>Company Signed</th><th>Action</th></tr></thead><tbody>';
+        list.forEach(a => {
+            const cs = a.diplomaSignedByCompany
+                ? '<span class="status-badge status-verified">✓ Signed</span>'
+                : '<span class="status-badge status-pending">Pending</span>';
+            html += `<tr>
+                <td><strong>${a.studentName}</strong></td>
+                <td>${a.company}</td>
+                <td>${a.internshipTitle}</td>
+                <td>${cs}</td>
+                <td>
+                    <button class="btn-approve" onclick="openFinalizeModal('${a.id}')"><i class="fas fa-check-double mr-1"></i> Sign & Complete</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderCompletedTable(list) {
+        if (!list.length) return '<div class="empty-state"><i class="fas fa-check-double"></i><p>No completed internships</p></div>';
+        let html = '<table><thead><tr><th>Student</th><th>Company</th><th>Internship</th><th>Action</th></tr></thead><tbody>';
+        list.forEach(a => {
+            html += `<tr>
+                <td><strong>${a.studentName}</strong></td>
+                <td>${a.company}</td>
+                <td>${a.internshipTitle}</td>
+                <td>
+                    <button class="btn-outline" onclick="previewCertificate('${a.studentName}','${a.company}','${a.internshipTitle}')"><i class="fas fa-eye mr-1"></i> View</button>
+                    <button class="btn-approve" onclick="downloadCompletionPdf('${a.studentName}','${a.company}','${a.internshipTitle}')"><i class="fas fa-download mr-1"></i> Download</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    // ==================== MODALS & ACTIONS ====================
+    function openFinalizeModal(appId) {
+        currentFinalizeAppId = appId;
+        const apps = loadApplications();
+        const app = apps.find(a => a.id == appId);
+        if (!app) return;
+
+        const e = app.evaluation || {};
+        const total = (e.punctuality || 0) + (e.quality || 0) + (e.teamwork || 0) + (e.initiative || 0);
+        const cs = app.diplomaSignedByCompany ? '✓ Signed' : '✗ Not yet signed';
+
+        document.getElementById('finalizeDetails').innerHTML = `
+            <p><strong>Student:</strong> ${app.studentName}</p>
+            <p><strong>Company:</strong> ${app.company}</p>
+            <p><strong>Internship:</strong> ${app.internshipTitle}</p>
+            <p><strong>Punctuality:</strong> ${e.punctuality || 'N/A'}/5</p>
+            <p><strong>Quality of Work:</strong> ${e.quality || 'N/A'}/5</p>
+            <p><strong>Teamwork:</strong> ${e.teamwork || 'N/A'}/5</p>
+            <p><strong>Initiative:</strong> ${e.initiative || 'N/A'}/5</p>
+            <p><strong>Total Score:</strong> ${total}/20</p>
+            <p><strong>Comments:</strong> ${e.comments || 'None'}</p>
+            <p><strong>Company Signature:</strong> ${cs}</p>
+            <p style="margin-top:12px;color:#4B5563;">Your signature will complete this internship and generate the final certificate.</p>
+        `;
+        document.getElementById('finalizeModal').style.display = 'flex';
+    }
+
+    async function finalizeInternship() {
+        if (!currentFinalizeAppId) return;
+        try {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const response = await fetch(`http://localhost:5000/api/department/application/${currentFinalizeAppId}/finalize`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'user-role': 'department' // 🔒 إثبات صلاحية رئيس القسم لتجاوز جدار الحماية للـ Backend
+                },
+                body: JSON.stringify({
+                    status: 'completed',
+                    departmentSigned: 1,
+                    departmentSignedDate: todayStr,
+                    certificateGenerated: 1
+                })
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                const app = defaultApplications.find(a => a.id == currentFinalizeAppId);
+                const e = app ? app.evaluation || {} : {};
+                
+                closeModal('finalizeModal');
+
+                // كود توليد الـ PDF الخاص بك كما هو تماماً دون المساس بتنسيقه
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+                doc.text('INTERNSHIP COMPLETION CERTIFICATE', 105, 20, { align: 'center' });
+                doc.setFontSize(12); doc.setFont('helvetica', 'normal');
+                doc.text(`This is to certify that ${app ? app.studentName : ''}`, 105, 50, { align: 'center' });
+                doc.text(`has successfully completed: ${app ? app.internshipTitle : ''} at ${app ? app.company : ''}`, 105, 60, { align: 'center' });
+                const total = (e.punctuality || 0) + (e.quality || 0) + (e.teamwork || 0) + (e.initiative || 0);
+                doc.text(`Evaluation: ${total}/20`, 105, 75, { align: 'center' });
+                doc.text(`Date: ${new Date().toLocaleDateString()}`, 105, 90, { align: 'center' });
+                doc.text('Department Head: ___________________ (Signed)', 20, 120);
+                doc.text(app && app.diplomaSignedByCompany ? 'Company Representative: ___________________ (Signed)' : 'Company Representative: ___________________ (Pending)', 130, 120);
+                doc.save(`Certificate_${app ? app.studentName.replace(/\s/g, '_') : 'Student'}.pdf`);
+
+                alert('✅ Internship signed, completed, and certificate generated.');
+                renderView('validations');
+            }
+        } catch (error) {
+            alert('❌ Connection error while finalizing internship');
+        }
+    }
+
+    async function validateAgreement(appId) {
+        try {
+            const response = await fetch(`http://localhost:5000/api/department/application/${appId}/finalize`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'user-role': 'department' // 🔒 إثبات صلاحية رئيس القسم لتخطي قفل الأمان للـ Backend
+                },
+                body: JSON.stringify({
+                    status: 'approved',
+                    departmentSigned: 0,
+                    departmentSignedDate: null,
+                    certificateGenerated: 0
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert('✅ Agreement approved. Internship is now active.');
+                renderView('validations');
+            }
+        } catch (error) {
+            alert('❌ Connection error');
+        }
+    }
+
+    function previewCertificate(student, company, internship) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('INTERNSHIP COMPLETION CERTIFICATE', 105, 20, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`This is to certify that ${student}`, 105, 50, { align: 'center' });
+        doc.text(`has successfully completed: ${internship} at ${company}`, 105, 60, { align: 'center' });
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 105, 80, { align: 'center' });
+        doc.text('Department Head: ___________________ (Signed)', 20, 110);
+        doc.text('Company Representative: ___________________ (Signed)', 130, 110);
+
+        const blob = doc.output('blob');
+        const url = URL.createObjectURL(blob);
+
+        document.getElementById('contractPreview').innerHTML = `
+            <p style="margin-bottom:16px;"><strong>Certificate Preview</strong></p>
+            <p>Student: ${student}</p>
+            <p>Company: ${company}</p>
+            <p>Internship: ${internship}</p>
+            <p style="margin-top:12px;color:#4B5563;">Both signatures are present on this certificate.</p>
+            <iframe src="${url}" width="100%" height="400px" style="border:none;margin-top:16px;border-radius:12px;"></iframe>
+        `;
+        document.getElementById('contractModal').style.display = 'flex';
+    }
+
+    // ==================== STUDENTS ====================
+    function renderStudentsView(container) {
+        const students = loadStudents();
+        container.innerHTML = `
+        <div class="view-container">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-users mr-2"></i> Students Management</h2>
+                <span>${students.length} students</span>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Degree</th>
+                            <th>Specialization</th>
+                            <th>Registered</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(s => `
+                            <tr>
+                                <td><strong>${s.firstName} ${s.lastName}</strong></td>
+                                <td>${s.email}</td>
+                                <td>${s.degree || 'N/A'}</td>
+                                <td>${s.specialization || 'N/A'}</td>
+                                <td>${new Date(s.registeredDate).toLocaleDateString()}</td>
+                                <td><span class="status-badge status-active">Active</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    // ==================== PDF FUNCTIONS ====================
+    window.downloadContractPdf = function() {
+        if (!currentContract) return;
+        const { student, company, internship } = currentContract;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+        doc.text('INTERNSHIP AGREEMENT', 105, 20, { align: 'center' });
+        doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 35);
+        doc.text('Between: University Echahid Cheikh Larbi Tebessi - Tebessa', 20, 45);
+        doc.text(`Student: ${student}`, 20, 55);
+        doc.text(`Company: ${company}`, 20, 65);
+        doc.text(`Internship: ${internship}`, 20, 75);
+        doc.text('Terms: 3 months, evaluation required.', 20, 90);
+        doc.text('University Representative ___________________', 20, 130);
+        doc.text('Company Representative ___________________', 130, 130);
+        doc.save(`Agreement_${student.replace(/\s/g, '_')}.pdf`);
+    };
+
+    window.downloadCompletionPdf = function(student, company, internship) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+        doc.text('CERTIFICATE OF INTERNSHIP COMPLETION', 105, 20, { align: 'center' });
+        doc.setFontSize(12); doc.setFont('helvetica', 'normal');
+        doc.text(`This is to certify that ${student}`, 105, 50, { align: 'center' });
+        doc.text(`has successfully completed: ${internship} at ${company}`, 105, 60, { align: 'center' });
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 105, 80, { align: 'center' });
+        doc.text('Department Head: ___________________ (Signed)', 20, 110);
+        doc.text('Company Representative: ___________________', 130, 110);
+        doc.save(`Certificate_${student.replace(/\s/g, '_')}.pdf`);
+    };
+
+    // ==================== SHARED FUNCTIONS ====================
+    window.viewCompanyDetails = function(companyId) {
+        currentCompanyId = companyId;
+        const company = loadCompanies().find(c => c.id === companyId);
+        if (company) {
+            document.getElementById('companyDetails').innerHTML = `
+                <p><strong>${company.companyName}</strong></p>
+                <p>Email: ${company.email}</p>
+                <p>Phone: ${company.phone || 'N/A'}</p>
+                <p>Address: ${company.address || 'N/A'}</p>
+                <p>Sector: ${company.sector || 'N/A'}</p>
+            `;
+            document.getElementById('companyModal').style.display = 'flex';
+        }
+    };
+
+    window.verifyCompany = async function() {
+        if (currentCompanyId) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/department/company/${currentCompanyId}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'user-role': 'department' // 🔒 إثبات صلاحية رئيس القسم لتخطي قفل الأمان للـ Backend
+                    },
+                    body: JSON.stringify({ status: 'verified' })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Company verified successfully!');
+                    closeModal('companyModal');
+                    renderView(currentView); // لإعادة إنعاش الجدول فوراً بالبيانات الجديدة
+                }
+            } catch (error) {
+                alert('❌ Connection error while verifying company');
+            }
+        }
+    };
+
+    window.rejectCompany = async function() {
+        if (currentCompanyId) {
+            if (confirm('Are you sure you want to reject this company?')) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/department/company/${currentCompanyId}/status`, {
+                        method: 'PUT',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'user-role': 'department' // 🔒 إثبات صلاحية رئيس القسم لتخطي قفل الأمان للـ Backend
+                        },
+                        body: JSON.stringify({ status: 'rejected' })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('❌ Company has been rejected.');
+                        closeModal('companyModal');
+                        renderView(currentView);
+                    }
+                } catch (error) {
+                    alert('❌ Connection error');
+                }
+            }
+        }
+    };
+
+    window.showContract = function(student, company, internship) {
+        currentContract = { student, company, internship };
+        document.getElementById('contractPreview').innerHTML = `INTERNSHIP AGREEMENT\n\nStudent: ${student}\nCompany: ${company}\nPosition: ${internship}`;
+        document.getElementById('contractModal').style.display = 'flex';
+    };
+
+    window.closeModal = function(id) {
+        document.getElementById(id).style.display = 'none';
+    };
+
+    window.logout = function() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+    };
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    };
+
+    // ==================== TAB SWITCHING ====================
+    window.switchTab = function(tabName, btn) {
+        document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.inner-tab-content').forEach(c => c.classList.remove('active'));
+        const target = document.getElementById(`${tabName}Tab`);
+        if (target) target.classList.add('active');
+    };
+
+    window.switchValidationTab = function(tabName, btn) {
+        document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.inner-tab-content').forEach(c => c.classList.remove('active'));
+        const target = document.getElementById(`${tabName}ValidTab`);
+        if (target) target.classList.add('active');
+    };
+
+    // ==================== INITIALIZATION ====================
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const view = item.dataset.view;
+            if (view) renderView(view);
+        });
+    });
+
+    document.getElementById('verifyCompanyBtn').onclick = verifyCompany;
+    document.getElementById('rejectCompanyBtn').onclick = rejectCompany;
+
+    window.openFinalizeModal = openFinalizeModal;
+    window.finalizeInternship = finalizeInternship;
+    window.validateAgreement = validateAgreement;
+    window.previewCertificate = previewCertificate;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('adminName').textContent = 'Department Admin';
+        document.querySelector('.avatar').textContent = 'DA';
+    });
+
+    renderView('dashboard');
+</script>
+</body>
+</html>
