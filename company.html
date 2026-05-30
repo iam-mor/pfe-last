@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Company Dashboard · Internship Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<header class="header">
+    <div class="logo">
+        <div class="logo-icon"><i class="fas fa-briefcase"></i></div>
+        <span class="logo-text">Internship Platform</span>
+        <span class="logo-badge">Company</span>
+    </div>
+    <div class="header-right">
+        <div class="notification-container">
+            <div class="notification-bell" onclick="toggleNotifications()">
+                <i class="far fa-bell"></i>
+                <span class="notification-badge" id="notificationCount">0</span>
+            </div>
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header"><i class="far fa-bell mr-2" style="color:#10b981;"></i>Notifications</div>
+                <div class="notification-list" id="notificationList"></div>
+            </div>
+        </div>
+        <div class="user-info">
+            <span class="user-name" id="userName">Tech Solutions DZ</span>
+            <div class="avatar" id="userAvatar">TS</div>
+            <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt mr-1"></i> Logout</button>
+        </div>
+    </div>
+</header>
+
+<aside class="sidebar">
+    <div class="menu-item active" data-view="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
+    <div class="menu-item" data-view="offers"><i class="fas fa-briefcase"></i> My Offers</div>
+    <div class="menu-item" data-view="applicants"><i class="fas fa-users"></i> Applicants</div>
+    <div class="menu-item" data-view="evaluations"><i class="fas fa-star"></i> Evaluations</div>
+    <div class="menu-item" data-view="signature"><i class="fas fa-pen-fancy"></i> Signature</div>
+    <div class="menu-item" data-view="notifications"><i class="fas fa-bell"></i> Notifications</div>
+    <div class="menu-item" data-view="settings"><i class="fas fa-cog"></i> Settings</div>
+</aside>
+
+<main class="main-content" id="mainContent"></main>
+
+<div id="offerModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-plus-circle mr-2" style="color:#10b981;"></i>Propose New Internship</h3>
+        <div class="form-group"><label>Internship Title</label><input type="text" id="offerTitle" placeholder="e.g., Frontend Developer"></div>
+        <div class="form-group"><label>Duration</label><input type="text" id="offerDuration" placeholder="e.g., 3 months"></div>
+        <div class="form-group"><label>Location</label><input type="text" id="offerLocation" placeholder="Algiers, Algeria"></div>
+        <div class="form-group"><label>Required Skills</label><textarea id="offerSkills" rows="2" placeholder="React, CSS, Tailwind"></textarea></div>
+        <div class="form-group"><label>Description</label><textarea id="offerDesc" rows="3" placeholder="Internship description..."></textarea></div>
+        <div class="modal-buttons">
+            <button class="btn-primary" onclick="saveOffer()" style="flex:1"><i class="fas fa-paper-plane mr-1"></i> Publish Offer</button>
+            <button onclick="closeModal('offerModal')" class="btn-outline">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="evalModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-star mr-2" style="color:#fbbf24;"></i>Evaluate Intern</h3>
+        <div class="form-group"><label>Intern Name</label><input type="text" id="evalInternName" readonly></div>
+        <div class="form-group"><label>Internship</label><input type="text" id="evalInternship" readonly></div>
+        <div class="form-group"><label>Punctuality (1-5)</label><input type="number" id="evalPunctuality" min="1" max="5" value="4"></div>
+        <div class="form-group"><label>Quality of Work (1-5)</label><input type="number" id="evalQuality" min="1" max="5" value="4"></div>
+        <div class="form-group"><label>Teamwork (1-5)</label><input type="number" id="evalTeamwork" min="1" max="5" value="4"></div>
+        <div class="form-group"><label>Comments</label><textarea id="evalComments" rows="3"></textarea></div>
+        <input type="hidden" id="evalApplicantEmail" value="">
+        <div class="modal-buttons">
+            <button class="btn-primary" onclick="submitEvaluation()" style="flex:1">Submit Evaluation</button>
+            <button onclick="closeModal('evalModal')" class="btn-outline">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="agreementModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-file-contract mr-2" style="color:#8b5cf6;"></i>Internship Agreement</h3>
+        <div id="agreementPreview" class="agreement-preview"></div>
+        <div class="modal-buttons">
+            <button class="btn-download" onclick="downloadAgreementPdf()" style="flex:1"><i class="fas fa-download mr-1"></i> Download PDF</button>
+            <button onclick="closeModal('agreementModal')" class="btn-outline">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="signConfirmModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-pen-fancy mr-2" style="color:#8b5cf6;"></i>Sign Agreement</h3>
+        <div id="signConfirmDetails" class="agreement-preview"></div>
+        <div class="form-group"><label>Your Full Name (Digital Signature)</label><input type="text" id="signatoryName" placeholder="Enter your full name to sign"></div>
+        <input type="hidden" id="signEvalId" value="">
+        <div class="modal-buttons">
+            <button class="btn-sign" onclick="confirmAgreementSignature()" style="flex:1"><i class="fas fa-check mr-1"></i> Sign Agreement</button>
+            <button onclick="closeModal('signConfirmModal')" class="btn-outline">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="applicantsModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-users mr-2" style="color:#10b981;"></i>Applicants for <span id="applicantsOfferTitle"></span></h3>
+        <div id="applicantsListContainer">
+            <table class="table-applicants">
+                <thead><tr><th>Name</th><th>Email</th><th>Applied Date</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="applicantsTableBody"></tbody>
+            </table>
+            <div id="noApplicants" class="empty-state" style="display:none;"><i class="fas fa-user-slash"></i><p>No applicants yet</p></div>
+        </div>
+        <div class="modal-buttons">
+            <button onclick="closeModal('applicantsModal')" class="btn-outline" style="margin-left:auto">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 🛡️ فحص صلاحيات الدخول للشركة فور تحميل الصفحة
+(function checkAuth() {
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user'));
+    const role = localStorage.getItem('userRole') || localStorage.getItem('role');
+
+    // إذا لم يجد بيانات المستخدم أو كان الـ role ليس شركة، يتم طرده فوراً لصفحة الـ Login
+    if (!user || role !== 'company') {
+        alert("⛔ غير مسموح بالدخول! يرجى تسجيل الدخول أولاً كشركة.");
+        window.location.href = 'login.html'; // تأكد من اسم صفحة تسجيل الدخول لديك
+    }
+})();
+
+    let offers = [];
+    let pendingEvaluations = [];
+    let completedEvaluations = [];
+    let signedAgreements = [];
+    let notifications = [];
+    let currentAgreementData = null;
+    let currentView = 'dashboard';
+    let currentApplicantsOfferId = null;
+
+    const sampleApplicants = [
+        { name: 'Ahmed Benali', email: 'ahmed@univ-tebessa.dz', applied: '2026-04-10', status: 'pending' },
+        { name: 'Sarah Merad', email: 's.merad@esi.dz', applied: '2026-04-11', status: 'interview' },
+        { name: 'Mohamed Larbi', email: 'm.larbi@univ-constantine.dz', applied: '2026-04-12', status: 'accepted' },
+        { name: 'Amina Khelifi', email: 'a.khelifi@univ-alger.dz', applied: '2026-04-08', status: 'pending' }
+    ];
+
+   async function loadData() {
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user'));
+    
+    if (user) {
+        let name = user.companyName || user.name || 'Tech Solutions DZ';
+        if (document.getElementById('userName')) document.getElementById('userName').textContent = name;
+        if (document.getElementById('userAvatar')) {
+            document.getElementById('userAvatar').textContent = name.split(' ').map(w => w[0]).join('').toUpperCase();
+        }
+
+        try {
+            // 1. جلب الإحصائيات مع تمرير بطاقة الحماية للحارس بصلاحية شركة
+            const statsResponse = await fetch(`http://localhost:5000/api/company/dashboard/stats/${user.id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'user-role': 'company' // 🔒 تمرير الصلاحية الموثقة للشركة لتخطي الحظر
+                }
+            });
+            const statsResult = await statsResponse.json();
+            if (statsResult.success) {
+                localStorage.setItem('dbStats', JSON.stringify(statsResult.stats));
+            }
+
+            // 2. جلب العروض من قاعدة البيانات مع تمرير بطاقة الحماية للحارس بصلاحية شركة
+            const offersResponse = await fetch(`http://localhost:5000/api/company/my-offers/${user.id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'user-role': 'company' // 🔒 تمرير الصلاحية الموثقة للشركة لتخطي الحظر
+                }
+            });
+            const offersResult = await offersResponse.json();
+
+            if (offersResult.success && offersResult.offers) {
+                // تصفية وتحويل المتغيرات مع توحيد النطاق العالمي لـ offers
+                const mappedOffers = offersResult.offers.map(o => {
+                    const fullDesc = o.Description || '';
+                    const parts = fullDesc.includes(' | ') ? fullDesc.split(' | ') : [fullDesc];
+                    const descText = parts[0] || fullDesc;
+                    
+                    let skills = 'Web Development';
+                    let location = 'Algeria';
+                    let duration = '4 months';
+
+                    parts.forEach(part => {
+                        if (part.startsWith('Skills: ')) skills = part.replace('Skills: ', '');
+                        if (part.startsWith('Loc: ')) location = part.replace('Loc: ', '');
+                        if (part.startsWith('Duration: ')) duration = part.replace('Duration: ', '');
+                    });
+
+                    // 🌟 جعل الفحص مرن جداً ليقبل Active أو active أو OPEN أو pending
+                    const dbStatus = o.Statut ? o.Statut.toLowerCase().trim() : 'active';
+                    const currentStatus = (dbStatus === 'active' || dbStatus === 'open' || dbStatus === 'pending' || dbStatus === 'نشط') ? 'active' : 'closed';
+
+                    return {
+                        id: o.InternshipID,
+                        companyId: user.id,
+                        CompanyID: user.id,
+                        title: o.Title,
+                        duration: duration,
+                        location: location,
+                        skills: skills,
+                        applicants: o.applicantsCount || 0,
+                        status: currentStatus, 
+                        published: o.StartDate || new Date().toISOString().split('T')[0],
+                        description: descText
+                    };
+                });
+
+                // 🌟 توحيد المصفوفة في كل النطاقات لضمان قراءتها من أي دالة رندرة
+                window.offers = mappedOffers;
+                offers = mappedOffers; 
+                localStorage.setItem('companyOffers', JSON.stringify(mappedOffers));
+            }
+        } catch (error) {
+            console.error("📴 السيرفر متوقف، قراءة التخزين المحلي الاحتياطي:", error);
+            const localData = JSON.parse(localStorage.getItem('companyOffers')) || [];
+            window.offers = localData;
+            offers = localData;
+        }
+    }
+
+    // تصفية وحجب الحسابات الوهمية نهائياً
+    window.pendingEvaluations = []; offersResult = []; 
+    window.completedEvaluations = []; window.signedAgreements = []; window.notifications = [];
+    pendingEvaluations = []; completedEvaluations = []; signedAgreements = []; notifications = [];
+}
+
+    function loadNotifications() {
+        const saved = localStorage.getItem('companyNotifications');
+        notifications = saved ? JSON.parse(saved) : [
+            { id: 1, title: 'New Applicant', message: 'Ahmed Benali applied for Frontend Developer Intern', type: 'success', time: new Date().toLocaleString(), read: false },
+            { id: 2, title: 'Offer Expiring', message: 'UI/UX Designer Intern offer has closed', type: 'warning', time: new Date(Date.now()-86400000).toLocaleString(), read: true }
+        ];
+        updateNotificationBadge();
+    }
+
+    function saveAll() {
+        localStorage.setItem('companyOffers', JSON.stringify(offers));
+        localStorage.setItem('pendingEvaluations', JSON.stringify(pendingEvaluations));
+        localStorage.setItem('completedEvaluations', JSON.stringify(completedEvaluations));
+        localStorage.setItem('signedAgreements', JSON.stringify(signedAgreements));
+        localStorage.setItem('companyNotifications', JSON.stringify(notifications));
+    }
+
+    function updateNotificationBadge() {
+    const badge = document.getElementById('notificationCount');
+    if (!badge) return;
+
+    const checkUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    const currentOffers = typeof offers !== 'undefined' ? offers : []; 
+    const userOffers = currentOffers.filter(o => o.companyId === checkUser.id || o.CompanyID === checkUser.id);
+    
+    // حساب عدد الإشعارات غير المقروءة الخاصة بالحساب الحالي فقط
+    const myActiveNotifications = (userOffers.length === 0) ? [] : (typeof notifications !== 'undefined' ? notifications : []);
+    const unreadCount = myActiveNotifications.filter(n => !n.read).length;
+
+    if (unreadCount === 0) {
+        badge.style.display = 'none'; // إخفاء التنبيه الأحمر تماماً إذا كان الحساب جديداً أو لا يملك إشعارات
+        badge.textContent = '0';
+    } else {
+        badge.style.display = 'block';
+        badge.textContent = unreadCount;
+    }
+}
+
+    function renderNotificationDropdown() {
+        const container = document.getElementById('notificationList');
+        if (!container) return;
+
+        // 🌟 1️⃣ تصفية الإشعارات بناءً على حالة عروض الشركة الحالية
+        const checkUser = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user')) || {};
+        const currentOffers = typeof offers !== 'undefined' ? offers : []; 
+        const userOffers = currentOffers.filter(o => o.companyId === checkUser.id || o.CompanyID === checkUser.id);
+        
+        // إذا كان الحساب جديداً ولا يملك عروضاً، نعتبر الإشعارات فارغة
+        const myActiveNotifications = (userOffers.length === 0) ? [] : (typeof notifications !== 'undefined' ? notifications : []);
+
+        // 🌟 2️⃣ عرض حالة فارغة منسقة إذا لم توجد إشعارات تخص الحساب الحالي
+        if (myActiveNotifications.length === 0) { 
+            container.innerHTML = `
+                <div style="padding:24px; text-align:center; color:#64748b;">
+                    <i class="fas fa-bell-slash" style="font-size: 22px; color: #CBD5E1; margin-bottom: 8px; display: block;"></i>
+                    No notifications
+                </div>`; 
+            return; 
+        }
+
+        // عرض الإشعارات الحقيقية الخاصة بالشركة إن وُجدت
+        container.innerHTML = myActiveNotifications.slice(0,10).map(n => `
+            <div class="notification-item ${!n.read?'unread':''}" onclick="markAsRead(${n.id})">
+                <div class="notification-icon">${n.type==='success'?'✅':n.type==='warning'?'⚠️':'📢'}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${n.title}</div>
+                    <div style="font-size:12px;color:#4B5563;">${n.message}</div>
+                    <div class="notification-time">${n.time}</div>
+                </div>
+            </div>`).join('');
+    }
+
+    function markAsRead(id) { 
+        const n = notifications.find(x => x.id === id); 
+        if (n) { 
+            n.read = true; 
+            saveAll(); 
+            renderNotificationDropdown(); 
+            if (typeof updateNotificationBadge === 'function') updateNotificationBadge(); 
+        } 
+    }
+
+    function toggleNotifications() { 
+        document.getElementById('notificationDropdown').classList.toggle('show'); 
+        renderNotificationDropdown(); 
+    }
+
+    function addNotification(title, message, type = 'info') { 
+        notifications.unshift({ id: Date.now(), title, message, type, time: new Date().toLocaleString(), read: false }); 
+        saveAll(); 
+        renderNotificationDropdown(); 
+        if (typeof updateNotificationBadge === 'function') updateNotificationBadge(); 
+    }
+
+    function renderView(view) {
+        currentView = view;
+        document.querySelectorAll('.menu-item').forEach(item => item.classList.toggle('active', item.dataset.view === view));
+        const container = document.getElementById('mainContent');
+        switch(view) {
+            case 'dashboard': renderDashboard(container); break;
+            case 'offers': renderOffersView(container); break;
+            case 'applicants': renderApplicantsView(container); break;
+            case 'evaluations': renderEvaluationsView(container); break;
+            case 'signature': renderSignatureView(container); break;
+            case 'notifications': renderNotificationsView(container); break;
+            case 'settings': renderSettingsView(container); break;
+        }
+    }
+
+    function renderDashboard(container) {
+        const dbStats = JSON.parse(localStorage.getItem('dbStats')) || { activeOffers: 0, closedOffers: 0, totalApplicants: 0 };
+
+        const activeOffersCount = dbStats.activeOffers;
+        const totalApplicantsCount = dbStats.totalApplicants;
+        const expiredOffersCount = dbStats.closedOffers;
+        
+        // 🌟 التحديث الذهبي: التأكد من القراءة من window.offers أو offers والتأكد من مطابقة الـ ID والحالة
+        const currentData = (typeof offers !== 'undefined' ? offers : []) || window.offers || [];
+        const user = JSON.parse(localStorage.getItem('currentUser')) || {};
+        
+        // تصفية أحدث 3 عروض نشطة تخص هذه الشركة فقط وبغض النظر عن حالة الأحرف
+        const recent = currentData
+            .filter(o => (o.companyId === user.id || o.CompanyID === user.id) && o.status === 'active')
+            .sort((a,b) => new Date(b.published) - new Date(a.published))
+            .slice(0,3);
+
+        container.innerHTML = `
+        <div class="view-container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-bullhorn mr-1" style="color:#10b981;"></i> Active Offers</div>
+                    <div class="stat-value">${activeOffersCount}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-users mr-1"></i> Total Applicants</div>
+                    <div class="stat-value">${totalApplicantsCount}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-user-check mr-1"></i> Pending Evals</div>
+                    <div class="stat-value">${pendingEvaluations.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fas fa-archive mr-1"></i> Expired</div>
+                    <div class="stat-value">${expiredOffersCount}</div>
+                </div>
+            </div>
+            
+            <div class="section-header">
+                <h2 class="section-title">📌 Recent Offers</h2>
+                <button class="btn-primary" onclick="openOfferModal()"><i class="fas fa-plus mr-1"></i> New Offer</button>
+            </div>
+            
+            <div class="cards-grid">
+                ${recent.map(o => renderOfferCard(o)).join('')}
+                ${recent.length === 0 ? '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-inbox"></i><p>No recent offers</p></div>' : ''}
+            </div>
+        </div>`;
+}
+
+    function renderOfferCard(offer, isExpired = false) {
+        const sc = isExpired ? 'status-closed' : 'status-active'; const st = isExpired ? 'Closed' : 'Active';
+        return `<div class="offer-card"><div class="card-title">${offer.title}</div><div class="card-detail"><i class="far fa-clock mr-1"></i>${offer.duration}</div><div class="card-detail"><i class="fas fa-map-pin mr-1"></i>${offer.location}</div><div class="card-detail"><i class="fas fa-tools mr-1"></i>${offer.skills}</div><div class="applicants-count"><i class="fas fa-users mr-1"></i>${offer.applicants||0} applicants</div><span class="status-badge ${sc}" style="margin-left:12px;">${st}</span><div class="card-buttons"><button class="btn-outline" onclick="viewApplicants(${offer.id})"><i class="fas fa-eye mr-1"></i> View Applicants</button>${!isExpired?`<button class="btn-outline" onclick="closeOffer(${offer.id})"><i class="fas fa-times mr-1"></i> Close</button>`:''}</div></div>`;
+    }
+
+    function renderEvalItem(evalItem) {
+        return `<div class="eval-item"><div class="eval-info"><h4>${evalItem.internName}</h4><p>${evalItem.internship} · Started: ${evalItem.startDate}</p></div><div style="display:flex;gap:12px;align-items:center"><span class="status-badge status-pending">Pending Review</span><button class="btn-outline" onclick="openEvalModal('${evalItem.email}')"><i class="fas fa-star mr-1"></i> Evaluate</button></div></div>`;
+    }
+
+    async function renderOffersView(container) {
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user')) || {};
+    
+    // 🌟 خطوة ذكية: تصفية المصفوفة المحلية أولاً لحساب الشركة الحالي قبل البناء لتجنب بيانات الآخرين
+    const myCurrentOffers = offers.filter(o => o.companyId === user.id || o.CompanyID === user.id);
+    const displayOffers = myCurrentOffers.length > 0 ? myCurrentOffers : [];
+
+    container.innerHTML = `<div class="view-container"><div class="section-header"><h2 class="section-title">My Internship Offers</h2><button class="btn-primary" onclick="openOfferModal()"><i class="fas fa-plus"></i> Post New Offer</button></div><div class="tabs"><button class="tab active" onclick="switchOfferTab('activeOffers',this)">Active (${displayOffers.filter(o=>o.status==='active').length})</button><button class="tab" onclick="switchOfferTab('expiredOffers',this)">Expired (${displayOffers.filter(o=>o.status==='closed').length})</button></div><div id="activeOffersTab" class="inner-tab-content active"><div class="cards-grid">${displayOffers.filter(o=>o.status==='active').map(o => renderOfferCard(o)).join('')||'<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-bullhorn"></i><p>No active offers</p></div>'}</div></div><div id="expiredOffersTab" class="inner-tab-content"><div class="cards-grid">${displayOffers.filter(o=>o.status==='closed').map(o => renderOfferCard(o, true)).join('')||'<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-archive"></i><p>No expired offers</p></div>'}</div></div></div>`;
+    
+    try {
+        // جلب جميع التربصات من السيرفر وتأمين المسار بصلاحيات الشركة لحماية قاعدة البيانات
+        const response = await fetch('http://localhost:5000/api/internships', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-role': 'company' // 🔒 تمرير الصلاحية الموثقة للشركة لتخطي الحظر
+            }
+        });
+        const allOffers = await response.json();
+        const myOffers = allOffers.filter(o => o.CompanyID === user.id);
+        
+        // إذا وجدنا عروضاً حقيقية في قاعدة البيانات للشركة نحدث العرض، وإذا لم نجد نتركها فارغة
+        if (myOffers.length > 0) {
+            offers = myOffers.map(o => ({ id: o.InternshipID, title: o.Title, duration: 'N/A', location: 'N/A', skills: 'N/A', applicants: o.applicants || 0, status: o.Statut?.toLowerCase() === 'closed' ? 'closed' : 'active', published: o.StartDate, description: o.Description || '' }));
+            saveAll(); 
+            renderView('offers');
+        } else {
+            offers = []; // الحساب الجديد فارغ تماماً
+            saveAll();
+        }
+    } catch (error) {
+        console.error("Error fetching internships:", error);
+    }
+}
+
+    function renderApplicantsView(container) {
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user')) || {};
+    // تصفية العروض التي تملك متقدمين وتخص هذه الشركة فقط
+    const offersWithApplicants = offers.filter(o => (o.companyId === user.id || o.CompanyID === user.id || !o.id) && (o.applicants || 0) > 0);
+    
+    container.innerHTML = `<div class="view-container"><div class="section-header"><h2 class="section-title">Offers with Applicants</h2></div>${offersWithApplicants.map(offer => `<div class="offer-card" style="margin-bottom:20px;"><div class="card-title">${offer.title}</div><div class="applicants-count"><i class="fas fa-users mr-1"></i>${offer.applicants} applicant(s)</div><button class="btn-outline" style="margin-top:12px;" onclick="viewApplicants(${offer.id})"><i class="fas fa-list mr-1"></i> View Details</button></div>`).join('')}${offersWithApplicants.length===0?'<div class="empty-state"><i class="fas fa-users-slash"></i><p>No applicants yet</p></div>':''}</div>`;
+}
+
+    function renderEvaluationsView(container) {
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user')) || {};
+    
+    // 🌟 تصفية العروض الخاصة بهذه الشركة فقط
+    const myCurrentOffers = offers.filter(o => o.companyId === user.id || o.CompanyID === user.id);
+    
+    // ربط التقييمات بوجود عروض حية للشركة، إذا لم توجد عروض يتم تصفير القائمة فوراً
+    const myPendingEval = (myCurrentOffers.length === 0) ? [] : (typeof pendingEvaluations !== 'undefined' ? pendingEvaluations : []);
+    const myCompletedEval = (myCurrentOffers.length === 0) ? [] : (typeof completedEvaluations !== 'undefined' ? completedEvaluations : []);
+
+    container.innerHTML = `
+        <div class="view-container">
+            <div class="section-header"><h2 class="section-title">⭐ Evaluations</h2></div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchEvalTab('pendingEval',this)">Pending (${myPendingEval.length})</button>
+                <button class="tab" onclick="switchEvalTab('completedEval',this)">Completed (${myCompletedEval.length})</button>
+            </div>
+            <div id="pendingEvalTab" class="inner-tab-content active">
+                <div class="evaluation-list">
+                    ${myPendingEval.length > 0 
+                        ? myPendingEval.map(e => renderEvalItem(e)).join('') 
+                        : '<div class="empty-state"><i class="fas fa-check-circle" style="font-size: 48px; color: #CBD5E1; margin-bottom: 16px;"></i><p>No pending evaluations</p></div>'
+                    }
+                </div>
+            </div>
+            <div id="completedEvalTab" class="inner-tab-content">
+                <div class="evaluation-list">
+                    ${myCompletedEval.length > 0 
+                        ? myCompletedEval.map(e => `
+                            <div class="eval-item">
+                                <div class="eval-info">
+                                    <h4>${e.internName} <span class="status-badge status-evaluated">Evaluated</span></h4>
+                                    <p>${e.internship} · Score: ${e.avgScore}/5</p>
+                                </div>
+                            </div>`).join('') 
+                        : '<div class="empty-state"><i class="fas fa-star-half-alt" style="font-size: 48px; color: #CBD5E1; margin-bottom: 16px;"></i><p>No completed evaluations yet</p></div>'
+                    }
+                </div>
+            </div>
+        </div>`;
+}
+
+    function renderSignatureView(container) {
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user')) || {};
+    
+    // تصفية وعزل البيانات الافتراضية للشركات الجديدة بناءً على عروضها
+    const myCurrentOffers = offers.filter(o => o.companyId === user.id || o.CompanyID === user.id);
+    const myCompletedEvaluations = (myCurrentOffers.length === 0) ? [] : (typeof completedEvaluations !== 'undefined' ? completedEvaluations : []);
+    const mySignedAgreements = (myCurrentOffers.length === 0) ? [] : (typeof signedAgreements !== 'undefined' ? signedAgreements : []);
+    const evaluatedNotSigned = myCompletedEvaluations.filter(e => !mySignedAgreements.some(s => s.email === e.email));
+    
+    container.innerHTML = `<div class="view-container">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-pen-fancy mr-2"></i>Signature Management</h2>
+        </div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchSignatureTab('pendingSign',this)">Pending Signature (${evaluatedNotSigned.length})</button>
+            <button class="tab" onclick="switchSignatureTab('completedSign',this)">Completed (${mySignedAgreements.length})</button>
+        </div>
+        <div id="pendingSignTab" class="inner-tab-content active">
+            <div class="evaluation-list">
+                ${evaluatedNotSigned.length > 0 ? evaluatedNotSigned.map(e => `
+                    <div class="eval-item" style="flex-direction: column; align-items: flex-start; gap: 15px;">
+                        
+                        <div class="eval-info">
+                            <h4>${e.internName} <span class="status-badge status-evaluated">Evaluated</span></h4>
+                            <p>${e.internship} · Score: ${e.avgScore}/5</p>
+                        </div>
+                        
+                        <div style="display:flex; flex-wrap: wrap; gap:10px; align-items:center; width: 100%;">
+                            <button class="btn-outline" onclick="viewAgreement('${e.internName}','${e.internship}','${e.email}')">
+                                <i class="fas fa-file-contract mr-1"></i> View Agreement
+                            </button>
+                            <button class="btn-sign" onclick="openSignModal('${e.email}')">
+                                <i class="fas fa-pen-fancy mr-1"></i> Sign
+                            </button>
+                            
+                            <div class="pdf-upload-group" style="display: flex; gap: 8px; align-items: center; background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                                
+                                <label for="pdfFile-${e.id || e.RegistrationID || btoa(e.email)}" class="btn-outline" style="margin:0; background: #38A3FD; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                    <i class="fas fa-file-pdf"></i> Choisir PDF
+                                </label>
+                                
+                                <input type="file" id="pdfFile-${e.id || e.RegistrationID || btoa(e.email)}" accept="application/pdf" style="display:none;" 
+                                       onchange="document.getElementById('fileName-${e.id || e.RegistrationID || btoa(e.email)}').innerText = this.files[0].name; document.getElementById('fileName-${e.id || e.RegistrationID || btoa(e.email)}').style.color='#36B37E';">
+                                
+                                <span id="fileName-${e.id || e.RegistrationID || btoa(e.email)}" style="font-size: 11px; color: #888; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Aucun</span>
+                                
+                                <button onclick="uploadAgreement('${e.id || e.RegistrationID}', '${e.email}')" style="background: #36B37E; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                    <i class="fas fa-upload"></i> Envoyer
+                                </button>
+                            </div>
+                            </div>
+                    </div>
+                `).join('') : '<div class="empty-state"><i class="fas fa-check-circle"></i><p>No pending signatures</p></div>'}
+            </div>
+        </div>
+        <div id="completedSignTab" class="inner-tab-content">
+            <div class="evaluation-list">
+                ${mySignedAgreements.length > 0 ? mySignedAgreements.map(e => `<div class="eval-item"><div class="eval-info"><h4>${e.internName} <span class="status-badge status-signed">Signed</span></h4><p>${e.internship} · Signed by: ${e.signatory} on ${e.signedDate}</p></div><div style="display:flex;gap:10px;align-items:center;"><button class="btn-outline" onclick="viewAgreement('${e.internName}','${e.internship}','${e.email}')"><i class="fas fa-eye mr-1"></i> View</button><button class="btn-download" onclick="downloadSignedAgreementPdf('${e.internName}','${e.internship}','${e.signatory}','${e.signedDate}')"><i class="fas fa-download mr-1"></i> Download</button></div></div>`).join('') : '<div class="empty-state"><i class="fas fa-pen-fancy"></i><p>No signed agreements yet</p></div>'}
+            </div>
+        </div>
+    </div>`;
+}
+
+    function renderNotificationsView(container) { 
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user')) || {};
+    
+    // 🌟 تصفية العروض الخاصة بهذه الشركة فقط
+    const myCurrentOffers = offers.filter(o => o.companyId === user.id || o.CompanyID === user.id);
+    
+    // إذا كانت الشركة جديدة ولا تملك عروضاً، الإشعارات تكون فارغة تماماً
+    const myNotifications = (myCurrentOffers.length === 0) ? [] : (typeof notifications !== 'undefined' ? notifications : []);
+
+    container.innerHTML = `
+        <div class="view-container">
+            <div class="section-header">
+                <h2 class="section-title">All Notifications</h2>
+            </div>
+            <div style="max-width:700px;">
+                ${myNotifications.length > 0 
+                    ? myNotifications.map(n => `
+                        <div class="notification-item ${!n.read ? 'unread' : ''}" style="border-radius:16px; margin-bottom:8px; background:rgba(255,255,255,0.7);" onclick="markAsRead(${n.id})">
+                            <div class="notification-icon">${n.type === 'success' ? '✅' : n.type === 'warning' ? '⚠️' : '📢'}</div>
+                            <div class="notification-content">
+                                <div class="notification-title">${n.title}</div>
+                                <div style="font-size:13px; color:#4B5563;">${n.message}</div>
+                                <div class="notification-time">${n.time}</div>
+                            </div>
+                        </div>`).join('') 
+                    : '<div class="empty-state"><i class="fas fa-bell-slash" style="font-size: 48px; color: #CBD5E1; margin-bottom: 16px;"></i><p>No notifications yet</p></div>'
+                }
+            </div>
+        </div>`; 
+}
+
+    function renderSettingsView(container) { 
+    // 🌟 جلب بيانات الشركة المسجلة حالياً
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user')) || {};
+    
+    // استخراج اسم الشركة الفعلي والبريد أو وضع قيم افتراضية إذا لم تكن مسجلة
+    const compName = currentUser.name || currentUser.companyName || "Tech Company";
+    const compEmail = currentUser.email || "company@email.com";
+    const compSector = currentUser.sector || "Technology";
+
+    container.innerHTML = `
+        <div class="view-container">
+            <div class="section-header">
+                <h2 class="section-title">Settings</h2>
+            </div>
+            <div class="offer-card" style="max-width:600px;">
+                <h3 style="color:#0F172A;margin-bottom:24px;">Company Profile</h3>
+                <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" id="settingCompanyName" value="${compName}">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="settingCompanyEmail" value="${compEmail}">
+                </div>
+                <div class="form-group">
+                    <label>Industry</label>
+                    <input type="text" id="settingCompanySector" value="${compSector}">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea rows="3">Leading software development company.</textarea>
+                </div>
+                <button class="btn-primary"><i class="fas fa-save mr-1"></i> Save Changes</button>
+            </div>
+        </div>
+    `; 
+}
+
+    function openOfferModal() { document.getElementById('offerModal').style.display = 'flex'; }
+
+    async function saveOffer() {
+    // 1️⃣ تجميع العناصر من عناصر الـ Input الخاصة بالمودال في صفحتك
+    const fields = ['offerTitle', 'offerDuration', 'offerLocation', 'offerSkills', 'offerDesc'];
+    const values = fields.map(id => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+    });
+    
+    const title = values[0];
+    const duration = values[1];
+    const location = values[2];
+    const skills = values[3];
+    const description = values[4];
+
+    // التحقق من المدخلات الأساسية
+    if (!title || !duration) {
+        return alert('Title and Duration are required');
+    }
+
+    // 2️⃣ جلب حساب الشركة الحالي لربط العرض بـ الـ ID الخاص بها
+    const user = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.id) {
+        return alert('Session expired. Please log in again.');
+    }
+
+    // دمج التفاصيل المتبقية في حقل الوصف لكي يسهل قراءتها وتقسيمها لاحقاً في الـ loadData
+    const fullDescription = `${description} | Skills: ${skills} | Loc: ${location} | Duration: ${duration}`;
+
+    // تجهيز كائن البيانات بالمسميات المتوافقة تماماً مع الـ Backend (company.js) الذي بنيناه
+    const offerData = { 
+        title: title, 
+        description: fullDescription, 
+        status: 'active',
+        companyId: user.id 
+    };
+
+    try {
+        // 3️⃣ إرسال الطلب عبر الـ API الموحد للشركات مع تمرير بطاقة الحماية للحارس
+        const res = await fetch('http://localhost:5000/api/company/add-offer', { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'user-role': 'company' // 🔒 تمرير الصلاحية الموثقة للشركة لتخطي الحظر
+            }, 
+            body: JSON.stringify(offerData) 
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) { 
+            alert('🎉 Success! Offer added directly to MySQL database.'); 
+
+            // 🌟 [إضافة الأمان والحل المباشر]: حقن العرض الجديد في المصفوفة المحلية فوراً ليراه الفلتر الذكي
+            if (typeof offers !== 'undefined') {
+                const insertedOffer = {
+                    id: result.insertId || Date.now(), // استخدام الـ ID العائد من MySQL أو معرف مؤقت
+                    companyId: user.id,
+                    CompanyID: user.id,
+                    title: title,
+                    description: description,
+                    skills: skills,
+                    location: location,
+                    duration: duration,
+                    status: 'active',
+                    published: new Date().toISOString().split('T')[0],
+                    applicants: 0
+                };
+                offers.unshift(insertedOffer); // دفعه في البداية ليظهر في الـ Recent Offers فوراً
+                
+                // تحديث الـ localStorage للإحصائيات الحية محلياً قبل الـ رندرة
+                const dbStats = JSON.parse(localStorage.getItem('dbStats')) || { activeOffers: 0, closedOffers: 0, totalApplicants: 0 };
+                dbStats.activeOffers = parseInt(dbStats.activeOffers) + 1;
+                localStorage.setItem('dbStats', JSON.stringify(dbStats));
+                
+                if (typeof saveAll === 'function') saveAll();
+            }
+            
+            // إغلاق النافذة المنبثقة (Modal) بعد النجاح
+            if (typeof closeModal === 'function') {
+                closeModal('offerModal'); 
+            } else {
+                const modal = document.getElementById('offerModal');
+                if (modal) modal.style.display = 'none';
+            }
+
+            // تفريغ حقول الإدخال لتصبح جاهزة للمرة القادمة
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = '';
+            });
+
+            // 4️⃣ إعادة جلب البيانات الحية والعروض المحدثة من قاعدة البيانات بالخلفية
+            try {
+                await loadData(); 
+            } catch (loadErr) {
+                console.log("loadData handled in background.");
+            }
+
+            // 5️⃣ تحديث أرقام عدادات الإحصائيات الحية في البطاقات بالأعلى تلقائياً
+            if (typeof updateDashboardStats === 'function') {
+                updateDashboardStats();
+            } else if (typeof updateUI === 'function') {
+                updateUI();
+            }
+
+            // 6️⃣ إعادة رسم الكروت بشكل لحظي في الـ Dashboard أو الواجهة النشطة حالياً
+            const mainContainer = document.getElementById('mainContent') || document.getElementById('content') || document.querySelector('.main-content');
+            
+            if (mainContainer) {
+                if (typeof currentView !== 'undefined' && typeof renderView === 'function') {
+                    renderView(currentView); 
+                } else if (typeof renderDashboard === 'function') {
+                    renderDashboard(mainContainer);
+                } else if (typeof renderOffersView === 'function') {
+                    renderOffersView(mainContainer);
+                } else {
+                    window.location.reload(); // حل احتياطي قاطع
+                }
+            } else {
+                window.location.reload(); // حل احتياطي قاطع في حال غياب الحاوية
+            }
+
+        } else {
+            alert('❌ Error: ' + (result.error || 'Server rejected the data.'));
+        }
+    } catch (error) {
+        console.error("❌ حدث خطأ أثناء الاتصال بالسيرفر لحفظ العرض:", error);
+        alert('❌ Network Error: Could not connect to the server.');
+    }
+}
+    
+    async function viewApplicants(offerId) {
+    currentApplicantsOfferId = offerId;
+    const tbody = document.getElementById('applicantsTableBody');
+    const modal = document.getElementById('applicantsModal');
+    
+    document.getElementById('applicantsOfferTitle').textContent = "Checking Applicants...";
+    modal.style.display = 'flex';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">Loading from Database...</td></tr>';
+    
+    try {
+        // 1️⃣ الاتصال بالسيرفر لجلب المترشحين للعرض الحالي مع تمرير بطاقة الحماية للحارس
+        const response = await fetch(`http://localhost:5000/api/company/applicants/${offerId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-role': 'company' // 🔒 تمرير الصلاحية الموثقة للشركة لتخطي الحظر
+            }
+        });
+        const applicants = await response.json();
+        
+        document.getElementById('applicantsOfferTitle').textContent = `Offer ID: ${offerId}`;
+        
+        // 2️⃣ تصحيح الشرط وتنظيفه من النص المتداخل
+        if (!applicants || applicants.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">No applicants yet.</td></tr>'; 
+            return; 
+        }
+        
+        // 3️⃣ بناء أسطر الجدول ديناميكياً بناءً على حالة كل مترشح
+        tbody.innerHTML = applicants.map(a => {
+            const status = (a.Status || 'pending').toLowerCase();
+            const alreadyEvaluated = completedEvaluations.some(e => e.email === a.Email) || pendingEvaluations.some(e => e.email === a.Email);
+            let actionHtml = '';
+            
+            if (status === 'pending') {
+                actionHtml = `
+                    <button class="btn-accept" onclick="acceptApplicant('${a.Email}','${a.FirstName} ${a.LastName}')">
+                        <i class="fas fa-check mr-1"></i>Accept
+                    </button>
+                    <button class="btn-reject" onclick="rejectApplicant('${a.Email}')">
+                        <i class="fas fa-times mr-1"></i>Reject
+                    </button>
+                `;
+            } else if (status === 'accepted' && !alreadyEvaluated) {
+                actionHtml = `
+                    <button class="eval-btn" onclick="openEvalModal('${a.Email}')">
+                        <i class="fas fa-star mr-1"></i>Evaluate
+                    </button>
+                `;
+            } else if (status === 'accepted' && alreadyEvaluated) {
+                actionHtml = `<span class="status-badge status-evaluated">Evaluated</span>`;
+            } else {
+                actionHtml = `<span class="status-badge status-${status}">${a.Status || 'Pending'}</span>`;
+            }
+            
+            return `
+                <tr>
+                    <td>${a.FirstName} ${a.LastName}</td>
+                    <td>${a.Email}</td>
+                    <td>${new Date(a.RegistrationDate).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${status}">${a.Status || 'Pending'}</span></td>
+                    <td style="display:flex;gap:6px;">${actionHtml}</td>
+                </tr>
+            `;
+        }).join('');
+        
+    } catch (error) { 
+        console.error("❌ Error fetching applicants:", error);
+        tbody.innerHTML = '<tr><td colspan="5" style="color:red;text-align:center;">Error connecting to MySQL.</td></tr>'; 
+    }
+}
+
+    window.acceptApplicant = async function(email, fullName) {
+    if (!confirm(`Are you sure you want to ACCEPT ${fullName || email}?`)) return;
+
+    try {
+        const response = await fetch('http://localhost:5000/api/company/applicants/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, internshipId: currentApplicantsOfferId })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert("✅ Student status updated to Accepted in Database!");
+            viewApplicants(currentApplicantsOfferId); // إعادة تحديث الجدول فوراً حياً
+        } else {
+            alert("❌ Error: " + data.error);
+        }
+    } catch (error) {
+        console.error("Error accepting applicant:", error);
+    }
+};
+
+window.rejectApplicant = async function(email) {
+    if (!confirm(`Are you sure you want to REJECT this applicant (${email})?`)) return;
+
+    try {
+        const response = await fetch('http://localhost:5000/api/company/applicants/reject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, internshipId: currentApplicantsOfferId })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert("❌ Student status updated to Rejected in Database!");
+            viewApplicants(currentApplicantsOfferId); // إعادة تحديث الجدول فوراً حياً
+        } else {
+            alert("❌ Error: " + data.error);
+        }
+    } catch (error) {
+        console.error("Error rejecting applicant:", error);
+    }
+};
+
+    window.closeOffer = async function(offerId) {
+    // التأكيد من المستخدم قبل الغلق
+    if (!confirm("Are you sure you want to close this internship offer permanently?")) {
+        return;
+    }
+
+    try {
+        console.log("📡 جاري إرسال طلب غلق العرض رقم:", offerId);
+
+        // الاتصال بالمسار الجديد في السيرفر
+        const response = await fetch(`http://localhost:5000/api/company/close-offer/${offerId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-role': 'company' // تمرير الحماية للعبور من الحارس
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert("🔒 Offer closed successfully in the database!");
+            
+            // إعادة تحديث العروض في الواجهة فوراً لرؤية التغيير بدون حاجة للتحديث اليدوي
+            if (typeof fetchOffers === 'function') {
+                fetchOffers(); 
+            } else if (typeof loadDashboardData === 'function') {
+                loadDashboardData();
+            } else {
+                location.reload(); // حل احتياطي: إعادة تحميل الصفحة لتطبيق التغيير
+            }
+        } else {
+            alert("❌ Failed to close offer: " + (data.message || "Unknown error"));
+        }
+    } catch (error) {
+        console.error("🚨 خطأ أثناء غلق العرض من الواجهة:", error);
+        alert("Error connecting to the server.");
+    }
+};
+
+    function openEvalModal(email) {
+        document.getElementById('evalModal').style.display = 'flex';
+        document.getElementById('evalApplicantEmail').value = email;
+        const pending = pendingEvaluations.find(e => e.email === email);
+        if (pending) { document.getElementById('evalInternName').value = pending.internName; document.getElementById('evalInternship').value = pending.internship; }
+        else { const applicant = sampleApplicants.find(a => a.email === email) || { name: email, internship: 'N/A' }; document.getElementById('evalInternName').value = applicant.name || email; document.getElementById('evalInternship').value = applicant.internship || 'N/A'; }
+    }
+
+    function submitEvaluation() {
+        const email = document.getElementById('evalApplicantEmail').value;
+        const name = document.getElementById('evalInternName').value;
+        const internship = document.getElementById('evalInternship').value;
+        const p = parseInt(document.getElementById('evalPunctuality').value) || 4;
+        const q = parseInt(document.getElementById('evalQuality').value) || 4;
+        const t = parseInt(document.getElementById('evalTeamwork').value) || 4;
+        const avg = ((p+q+t)/3).toFixed(1);
+        pendingEvaluations = pendingEvaluations.filter(e => e.email !== email);
+        completedEvaluations.push({ internName: name, email: email, internship: internship, avgScore: avg, date: new Date().toLocaleDateString() });
+        saveAll(); closeModal('evalModal');
+        addNotification('Evaluation Submitted', `You evaluated ${name} (Score: ${avg}/5).`, 'success');
+        renderView(currentView);
+    }
+
+    function viewAgreement(internName, internship, email) {
+        currentAgreementData = { internName, internship, email };
+        document.getElementById('agreementPreview').innerHTML = `<h4 style="margin-bottom:12px;">INTERNSHIP AGREEMENT</h4><p><strong>Intern:</strong> ${internName}</p><p><strong>Internship:</strong> ${internship}</p><p><strong>Company:</strong> ${document.getElementById('userName').textContent}</p><p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p><p style="margin-top:12px;">This agreement confirms successful completion of the internship.</p>`;
+        document.getElementById('agreementModal').style.display = 'flex';
+    }
+
+    function openSignModal(email) {
+        const evalData = completedEvaluations.find(e => e.email === email); if (!evalData) return;
+        document.getElementById('signEvalId').value = email; document.getElementById('signatoryName').value = '';
+        document.getElementById('signConfirmDetails').innerHTML = `<h4 style="margin-bottom:12px;">AGREEMENT REVIEW</h4><p><strong>Intern:</strong> ${evalData.internName}</p><p><strong>Internship:</strong> ${evalData.internship}</p><p><strong>Score:</strong> ${evalData.avgScore}/5</p>`;
+        document.getElementById('signConfirmModal').style.display = 'flex';
+    }
+
+    function confirmAgreementSignature() {
+        const email = document.getElementById('signEvalId').value;
+        const signatory = document.getElementById('signatoryName').value.trim();
+        if (!signatory) return alert('Please enter your name to sign.');
+        const evalData = completedEvaluations.find(e => e.email === email); if (!evalData) return;
+        completedEvaluations = completedEvaluations.filter(e => e.email !== email);
+        signedAgreements.push({ ...evalData, signatory, signedDate: new Date().toLocaleDateString() });
+        saveAll(); closeModal('signConfirmModal');
+        addNotification('Agreement Signed', `You signed the agreement for ${evalData.internName}.`, 'success');
+        renderView('signature');
+    }
+
+    function downloadAgreementPdf() {
+        if (!currentAgreementData) return;
+        const { internName, internship } = currentAgreementData;
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('INTERNSHIP AGREEMENT',105,20,{align:'center'});
+        doc.setFontSize(11); doc.setFont('helvetica','normal');
+        doc.text(`Date: ${new Date().toLocaleDateString()}`,20,35);
+        doc.text(`Company: ${document.getElementById('userName').textContent}`,20,45);
+        doc.text(`Intern: ${internName}`,20,55); doc.text(`Internship: ${internship}`,20,65);
+        doc.save(`Agreement_${internName.replace(/\s/g,'_')}.pdf`);
+    }
+
+    function downloadSignedAgreementPdf(internName, internship, signatory, signedDate) {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('SIGNED INTERNSHIP AGREEMENT',105,20,{align:'center'});
+        doc.setFontSize(11); doc.setFont('helvetica','normal');
+        doc.text(`Date: ${signedDate}`,20,35);
+        doc.text(`Company: ${document.getElementById('userName').textContent}`,20,45);
+        doc.text(`Intern: ${internName}`,20,55); doc.text(`Internship: ${internship}`,20,65);
+        doc.text(`Signed by: ${signatory}`,20,80);
+        doc.save(`Signed_Agreement_${internName.replace(/\s/g,'_')}.pdf`);
+    }
+
+    function switchOfferTab(tabName, btn) {
+        document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.inner-tab-content').forEach(c => c.classList.remove('active'));
+        const target = document.getElementById(`${tabName}Tab`);
+        if (target) target.classList.add('active');
+    }
+
+    function switchSignatureTab(tabName, btn) {
+        document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.inner-tab-content').forEach(c => c.classList.remove('active'));
+        const target = document.getElementById(`${tabName}Tab`);
+        if (target) target.classList.add('active');
+    }
+
+    function switchEvalTab(tabName, btn) {
+    document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.inner-tab-content').forEach(c => c.classList.remove('active'));
+    const target = document.getElementById(`${tabName}Tab`);
+    if (target) target.classList.add('active');
+}
+
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+function logout() { 
+    if (confirm('Are you sure you want to logout?')) { 
+        // 🧹 تنظيف شامل لكل بقايا الجلسة لضمان عدم تخطي جدار الحماية
+        localStorage.removeItem('currentUser'); 
+        localStorage.removeItem('user'); 
+        localStorage.removeItem('userRole'); 
+        localStorage.removeItem('role'); 
+        
+        sessionStorage.clear(); // مسح جلسة المتصفح المؤقتة احتياطاً
+        
+        // 🚀 التوجيه لصفحة تسجيل الدخول
+        window.location.href = 'login.html'; 
+    } 
+}
+    window.renderView = renderView;
+    window.openOfferModal = openOfferModal;
+    window.saveOffer = saveOffer;
+    window.viewApplicants = viewApplicants;
+    window.acceptApplicant = acceptApplicant;
+    window.rejectApplicant = rejectApplicant;
+    window.closeOffer = closeOffer;
+    window.openEvalModal = openEvalModal;
+    window.submitEvaluation = submitEvaluation;
+    window.viewAgreement = viewAgreement;
+    window.openSignModal = openSignModal;
+    window.confirmAgreementSignature = confirmAgreementSignature;
+    window.downloadAgreementPdf = downloadAgreementPdf;
+    window.downloadSignedAgreementPdf = downloadSignedAgreementPdf;
+    window.switchOfferTab = switchOfferTab;
+    window.switchSignatureTab = switchSignatureTab;
+    window.closeModal = closeModal;
+    window.logout = logout;
+    window.markAsRead = markAsRead;
+    window.toggleNotifications = toggleNotifications;
+    window.switchEvalTab = switchEvalTab;
+
+    document.addEventListener('click', (e) => {
+        const nc = document.querySelector('.notification-container');
+        const dd = document.getElementById('notificationDropdown');
+        if (nc && !nc.contains(e.target) && dd.classList.contains('show')) dd.classList.remove('show');
+    });
+    window.onclick = function(event) { if (event.target.classList.contains('modal')) event.target.style.display = 'none'; };
+    document.querySelectorAll('.menu-item').forEach(item => { item.addEventListener('click', () => { const v = item.dataset.view; if (v) renderView(v); }); });
+
+    loadData();
+    loadNotifications();
+    renderView('dashboard');
+
+    // 🌟 كود إجبار الصفحة على جلب البيانات من السيرفر وانتظارها قبل الرسم أول مرة
+// 🔥 الحدث المدمج والنهائي لحماية الجلسة وجلب البيانات الحية رغماً عن التحديث
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("🚀 [System Log] Checking Session Security Layer...");
+
+    // 1️⃣ فحص وجود الشركة في الـ LocalStorage (بأي مسمى مخزن) لعدم حدوث الطرد
+    const checkUser = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('user'));
+    
+    if (!checkUser) {
+        console.warn("🚨 [Auth Guard] No session found! Safe redirecting to login...");
+        // إذا رغبت في إلغاء الطرد كلياً أثناء المناقشة، قم بوضع // قبل السطر التالي:
+        window.location.href = 'login.html'; 
+        return;
+    }
+
+    console.log("✅ [Auth Guard] Session authorized for: ", checkUser);
+
+    try {
+        // 2️⃣ تنظيف المصفوفات للبيانات الوهمية إذا كانت الشركة جديدة ومسجلة حياً
+        const currentOffers = typeof offers !== 'undefined' ? offers : []; 
+        const userOffers = currentOffers.filter(o => o.companyId === checkUser.id || o.CompanyID === checkUser.id);
+        
+        if (userOffers.length === 0) {
+            if (typeof pendingEvaluations !== 'undefined') pendingEvaluations = [];
+            if (typeof completedEvaluations !== 'undefined') completedEvaluations = [];
+            if (typeof signedAgreements !== 'undefined') signedAgreements = [];
+            if (typeof notifications !== 'undefined') notifications = [];
+        }
+
+        // 3️⃣ ملء بيانات الحقول في صفحة الإعدادات أو الحساب الشخصي للشركة تلقائياً
+        const nameField = document.getElementById('companyNameInput');
+        const emailField = document.getElementById('companyEmailInput');
+        const sectorField = document.getElementById('companySectorInput');
+
+        if (nameField) nameField.value = checkUser.name || checkUser.companyName || checkUser.Name || "";
+        if (emailField) emailField.value = checkUser.email || checkUser.Email || "";
+        if (sectorField && (checkUser.sector || checkUser.Sector)) {
+            sectorField.value = checkUser.sector || checkUser.Sector;
+        }
+
+        // 4️⃣ استدعاء جلب البيانات الحقيقي من الـ MySQL (الحدث الأهم)
+        console.log("📡 Connecting to MySQL database to fetch real metrics...");
+        await loadData();
+        
+        // 5️⃣ تحديث العدادات وكروت لوحة التحكم فوراً بناءً على البيانات القادمة من قاعدة البيانات
+        if (typeof updateDashboardStats === 'function') {
+            updateDashboardStats();
+        } else if (typeof updateUI === 'function') {
+            updateUI();
+        }
+
+        if (typeof renderView === 'function') {
+            renderView('dashboard'); 
+        } else if (typeof renderDashboard === 'function') {
+            renderDashboard();
+        }
+
+    } catch (err) {
+        console.error("❌ خطأ أثناء تحميل لوحة التحكم من قاعدة البيانات:", err);
+    }
+});
+
+// 🛠️ دالة إرسال ملف الاتفاقية PDF إلى السيرفر الخلفي وقاعدة البيانات
+async function uploadAgreement(registrationId, email) {
+    // 1️⃣ التوجه فوراً وبشكل ديناميكي إلى حقل الملفات الخاص بهذا الطالب بناءً على معرفه
+    // نستخدم الـ email كبصمة احتياطية إذا لم يتوفر الـ ID في المجموعات المحلية
+    const uniqueId = registrationId && registrationId !== 'undefined' ? registrationId : btoa(email);
+    const fileInput = document.getElementById(`pdfFile-${uniqueId}`);
+    
+    // 2️⃣ فحص أمان سريع: إذا نسيت الشركة ولم تختار ملفاً، نبهها وتوقف عن التنفيذ
+    if (!fileInput || fileInput.files.length === 0) {
+        alert("Veuillez choisir un fichier PDF d'abord! (الرجاء اختيار ملف أولاً)");
+        return;
+    }
+
+    const file = fileInput.files[0];
+
+    // 3️⃣ تجهيز الحقيبة الرقمية (FormData) المخصصة لنقل الملفات عبر بروتوكول HTTP
+    const formData = new FormData();
+    // نضع ملف الـ PDF داخل الحقيبة ونسميه 'agreementPdf' (يجب أن يطابق الاسم المستعمل في multer بالسيرفر)
+    formData.append("agreementPdf", file); 
+
+    try {
+        // إظهار مؤشر بسيط في نص الزر أو التنبيهات يفيد بأن الرفع جارٍ حالياً
+        console.log(`📤 الرفع جارٍ للطالب صاحب المعرف: ${registrationId || email}`);
+
+        // 4️⃣ الاتصال الحقيقي بالسيرفر الخلفي عبر رابط الـ API المخصص
+        // نرسل معرف التسجيل في الرابط لكي يعرف السيرفر أي سطر في قاعدة البيانات يجب تحديثه
+        const response = await fetch(`http://localhost:5000/api/company/upload-agreement/${registrationId || btoa(email)}`, {
+            method: "POST",
+            headers: {
+                // نرسل الـ user-role في الـ Headers لكي يتخطى الفحص بأمان في الـ authMiddleware
+                'user-role': 'company'
+            },
+            body: formData // الحقيبة ترسل تلقائياً بصيغة multipart/form-data
+        });
+        
+        const result = await response.json();
+        
+        // 5️⃣ استقبال رد السيرفر وإعلام المستخدم بالنتيجة
+        if (result.success) {
+            alert("🎉 L'accord de stage PDF a été téléchargé avec succès! (تم رفع اتفاقية التربص وتحديث قاعدة البيانات بنجاح)");
+            
+            // تحديث البيانات محلياً في المتصفح لكي ينعش النظام نفسه تلقائياً بناءً على دوالك الأصلية
+            if (typeof loadData === 'function') await loadData();
+            if (typeof saveAll === 'function') saveAll();
+            
+            // إعادة تحميل الصفحة لرؤية الحالة الجديدة حياً أمام لجنة المناقشة
+            window.location.reload(); 
+        } else {
+            alert("Erreur: " + result.message);
+        }
+    } catch (error) {
+        console.error("🚨 خطأ أثناء الاتصال بالسيرفر لرفع الملف:", error);
+        alert("Erreur de connexion au serveur. (فشل الاتصال بالسيرفر، تأكد من تشغيل الخلفية)");
+    }
+}
+
+// 🎯 تسجيل الدالة رسمياً في نطاق window ليصبح معترفاً بها وصالحة للاستدعاء من حقول الـ HTML
+window.uploadAgreement = uploadAgreement;
+</script>
+</body>
+</html>
